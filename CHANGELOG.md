@@ -4,6 +4,10 @@ Docs: https://docs.openclaw.ai
 
 ## 2026.2.2
 
+### Changes
+
+- Feishu: add Feishu/Lark plugin support + docs. Thanks @jiulingyun (openclaw-cn).
+
 ### Fixes
 
 - Security: guard skill installer downloads with SSRF checks (block private/localhost URLs).
