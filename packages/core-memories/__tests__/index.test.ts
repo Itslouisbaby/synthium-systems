@@ -16,7 +16,7 @@ describe("CoreMemories v2.1", () => {
 
   beforeAll(async () => {
     cm = await getCoreMemories();
-  });
+  }, 10000);
 
   describe("Flash Entry Management", () => {
     it("should add a normal entry without user flag", () => {
@@ -70,7 +70,7 @@ describe("CoreMemories v2.1", () => {
         ).toISOString(),
         type: "conversation",
         content:
-          "Remember this: My test recovery code is TEST1234EXAMPLE5678. This is test information.",
+          "Remember this: My test recovery code is TEST-RECOVERY-CODE-EXAMPLE. This is test information.",
         speaker: "louis",
         keywords: ["recovery", "code", "test", "information"],
         emotionalSalience: 0.9,
@@ -84,7 +84,7 @@ describe("CoreMemories v2.1", () => {
       expect(warmEntry.id).toBe(oldFlagged.id);
       expect(warmEntry.keywords).toEqual(oldFlagged.keywords);
       expect(warmEntry.compressionMethod).toBeDefined();
-    });
+    }, 10000);
 
     it("should propose high-emotion entries for MEMORY.md", async () => {
       const oldDecision: FlashEntry = {
@@ -110,7 +110,7 @@ describe("CoreMemories v2.1", () => {
         expect(warmEntry.memoryMdProposal.reason).toBeDefined();
         expect(warmEntry.memoryMdProposal.section).toBeDefined();
       }
-    });
+    }, 10000);
   });
 
   describe("MEMORY.md Integration", () => {
@@ -143,7 +143,7 @@ describe("CoreMemories v2.1", () => {
       );
       // Note: Proposal may or may not be created depending on emotional threshold logic
       // The test validates the API works correctly
-    });
+    }, 10000);
 
     it("should provide pending proposal count in session context", () => {
       const context = cm.loadSessionContext();

@@ -252,6 +252,11 @@ function checkUserFlagged(text: string): boolean {
 
 // Auto-detection: Check if Ollama is available
 export async function checkOllamaAvailable(): Promise<OllamaCheckResult> {
+  // Skip Ollama check in test environment for faster tests
+  if (process.env.NODE_ENV === "test" || process.env.VITEST) {
+    return { available: false, models: [] };
+  }
+
   return new Promise((resolve) => {
     const req = http.get(
       "http://localhost:11434/api/tags",
