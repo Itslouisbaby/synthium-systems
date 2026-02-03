@@ -9,15 +9,15 @@ CoreMemories addresses the need for efficient, context-aware memory in AI agents
 ## Quick Start
 
 ```javascript
-const { getCoreMemories } = require('@openclaw/core-memories');
+const { getCoreMemories } = require("@openclaw/core-memories");
 
 const cm = await getCoreMemories();
 
 // Add a memory
-cm.addFlashEntry('User wants to build voice system', 'user');
+cm.addFlashEntry("User wants to build voice system", "user");
 
 // Find memories by keyword
-const results = cm.findByKeyword('voice');
+const results = cm.findByKeyword("voice");
 
 // Load session context (default startup)
 const { flash, warm, totalTokens } = cm.loadSessionContext();

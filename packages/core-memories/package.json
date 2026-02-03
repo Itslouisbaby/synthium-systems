@@ -2,51 +2,51 @@
   "name": "@openclaw/core-memories",
   "version": "1.0.0",
   "description": "Hierarchical memory system for OpenClaw agents with progressive compression and event-driven retrieval",
-  "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    },
-    "./integration": {
-      "import": "./dist/integration.js",
-      "types": "./dist/integration.d.ts"
-    }
-  },
-  "scripts": {
-    "build": "tsc",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "format": "oxfmt --check",
-    "format:fix": "oxfmt --write",
-    "lint": "oxlint --type-aware --tsconfig tsconfig.json",
-    "lint:fix": "oxlint --type-aware --tsconfig tsconfig.json --fix",
-    "typecheck": "tsc --noEmit"
-  },
   "keywords": [
-    "openclaw",
-    "memory",
     "agent",
     "ai",
+    "compression",
     "hierarchical-memory",
-    "compression"
+    "memory",
+    "openclaw"
   ],
+  "license": "MIT",
   "author": "Louis Angeli <lucas.was.here@proton.me>",
   "contributors": [
     "Lucas (OpenClaw Agent)"
   ],
-  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/openclaw/openclaw.git",
     "directory": "packages/core-memories"
   },
-  "engines": {
-    "node": ">=18.0.0"
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./integration": {
+      "types": "./dist/integration.d.ts",
+      "import": "./dist/integration.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "format": "oxfmt --check",
+    "format:fix": "oxfmt --write",
+    "lint": "oxlint --type-aware --tsconfig tsconfig.json",
+    "lint:fix": "oxlint --type-aware --tsconfig tsconfig.json --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
     "openclaw": ">=2026.2.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

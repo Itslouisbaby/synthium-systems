@@ -52,23 +52,25 @@ CoreMemories integrates with OpenClaw's existing systems (CRON, HEARTBEAT, MEMOR
 **When:** Every 6 hours
 
 **What it does:**
+
 ```javascript
 async function heartbeatMaintenance() {
   // 1. Compress Flash → Warm (entries >48h)
   await cm.runCompression();
-  
+
   // 2. Check for MEMORY.md proposals
   const pending = cm.getPendingMemoryMdProposals();
-  
+
   // 3. Update keyword index
   cm.saveIndex(updatedIndex);
-  
+
   // 4. Log status
   console.log(`Status: ${flash} flash, ${warm} warm entries`);
 }
 ```
 
 **Triggers:**
+
 - Time-based (every 6h)
 - Token budget exceeded
 - Session >100 messages
@@ -80,28 +82,30 @@ async function heartbeatMaintenance() {
 **When:** Exact scheduled time
 
 **What it does:**
+
 ```javascript
 async function createSmartReminder({ text, scheduledTime, keywords }) {
   // 1. Query CoreMemories for context
   const cm = await getCoreMemories();
   let contextEntries = [];
-  
+
   for (const keyword of keywords) {
     const results = cm.findByKeyword(keyword);
     contextEntries.push(...results.flash, ...results.warm);
   }
-  
+
   // 2. Create reminder with context
   return {
     text,
     scheduledTime,
     context: contextEntries.slice(0, 3), // Top 3 relevant memories
-    keywords
+    keywords,
   };
 }
 ```
 
 **Example Flow:**
+
 ```
 User: "Remind me to check Groq in 2 hours"
         ↓
@@ -118,11 +122,11 @@ Store reminder with context
         ↓
 CRON fires:
   "⏰ Reminder: Check Groq
-   
+
    📋 Context:
    - Voice setup day, waiting on Groq console
    - Twilio configured, ElevenLabs working
-   
+
    🔍 Related: groq, voice, console"
 ```
 
@@ -133,32 +137,33 @@ CRON fires:
 **When:** During compression (48h)
 
 **What it does:**
+
 ```javascript
 class MemoryMdIntegration {
   shouldProposeForMemoryMd(entry) {
     // High emotion
     if (entry.emotionalSalience >= 0.8) return true;
-    
+
     // Decision type
-    if (['decision', 'milestone'].includes(entry.type)) return true;
-    
+    if (["decision", "milestone"].includes(entry.type)) return true;
+
     // User flagged
     if (entry.userFlagged) return true;
-    
+
     return false;
   }
-  
+
   proposeUpdate(entry) {
-    console.log('💡 MEMORY.md Update Suggested:');
+    console.log("💡 MEMORY.md Update Suggested:");
     console.log(`   "${essence}"`);
     console.log(`   Section: ${suggestSection(entry)}`);
     console.log(`   [Yes] [No] [Edit]`);
   }
-  
+
   async updateMemoryMd(proposal) {
     // Backup old MEMORY.md
-    fs.copyFileSync('MEMORY.md', `MEMORY.md.backup.${Date.now()}`);
-    
+    fs.copyFileSync("MEMORY.md", `MEMORY.md.backup.${Date.now()}`);
+
     // Add to appropriate section
     addToSection(proposal.section, proposal.essence);
   }
@@ -166,6 +171,7 @@ class MemoryMdIntegration {
 ```
 
 **Sections:**
+
 - `## Decisions Made` - For decision type entries
 - `## Milestones` - For achievements
 - `## Projects` - For project updates (Card Sync, etc.)
@@ -175,20 +181,24 @@ class MemoryMdIntegration {
 ### 4. SOUL.md Relationship
 
 **SOUL.md = Identity (Static)**
+
 ```markdown
 # SOUL.md
 
 ## Core Identity
+
 - I'm Lucas, helpful and direct
 - I prefer actions over words
 - I respect privacy
 
 ## Learned Preferences (via CoreMemories)
+
 - User prefers bullet lists ✓ (confirmed 5x)
 - User wants proactive suggestions ✓ (confirmed 3x)
 ```
 
 **Updates:**
+
 - **Never auto-updated** — only fundamental shifts
 - **Changed by:** User explicitly, or after 10+ CoreMemories confirmations
 
@@ -266,17 +276,18 @@ CRON fires → executeSmartReminder()
         ↓
 Message sent:
   "⏰ Reminder: Check Groq status
-   
+
    📋 Context from our conversation:
    - Waiting on Groq console for voice system
    - Last checked: yesterday
-   
+
    🔍 Related: groq, voice"
 ```
 
 ## Configuration
 
 ### Default (Zero Config)
+
 ```json
 {
   "coreMemories": {
@@ -287,6 +298,7 @@ Message sent:
 ```
 
 ### With Local LLM
+
 ```json
 {
   "coreMemories": {
@@ -303,6 +315,7 @@ Message sent:
 ```
 
 ### Expert (Full Control)
+
 ```json
 {
   "coreMemories": {
@@ -325,15 +338,15 @@ Message sent:
 
 ## Token Budget
 
-| Component | Tokens | Load Strategy |
-|-----------|--------|---------------|
-| SOUL.md | ~300 | Always |
-| MEMORY.md | ~1000 | Always |
-| CoreMemories Flash | ~800 | Always |
-| CoreMemories Warm | ~600 | Triggered |
-| CoreMemories Recent | ~400 | Keyword match |
-| **Total (default)** | **~2100** | vs ~2200 before |
-| **Total (with context)** | **~2500** | When needed |
+| Component                | Tokens    | Load Strategy   |
+| ------------------------ | --------- | --------------- |
+| SOUL.md                  | ~300      | Always          |
+| MEMORY.md                | ~1000     | Always          |
+| CoreMemories Flash       | ~800      | Always          |
+| CoreMemories Warm        | ~600      | Triggered       |
+| CoreMemories Recent      | ~400      | Keyword match   |
+| **Total (default)**      | **~2100** | vs ~2200 before |
+| **Total (with context)** | **~2500** | When needed     |
 
 **Savings:** ~400 tokens per session (18% reduction)
 

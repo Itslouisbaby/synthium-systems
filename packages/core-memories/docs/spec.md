@@ -19,6 +19,7 @@ CoreMemories is a hierarchical, event-driven memory system for OpenClaw agents t
 ### LAYER 1: HOT (Immediate Recall)
 
 #### Flash Sublayer (0-48 hours)
+
 **Purpose**: Exact recall of current session
 **Format**: Full transcript with timestamps
 **Detail**: 100%
@@ -44,6 +45,7 @@ CoreMemories is a hierarchical, event-driven memory system for OpenClaw agents t
 ```
 
 #### Warm Sublayer (2-7 days)
+
 **Purpose**: Recent context without full detail
 **Format**: Summaries + key quotes
 **Detail**: 80%
@@ -70,6 +72,7 @@ CoreMemories is a hierarchical, event-driven memory system for OpenClaw agents t
 ```
 
 **Compression Rules (Rule-Based)**:
+
 - Keep: User instructions, corrections, decisions
 - Summarize: General conversation
 - Drop: Tool outputs, status messages, filler
@@ -82,6 +85,7 @@ CoreMemories is a hierarchical, event-driven memory system for OpenClaw agents t
 All recent layers use **local LLM** (Phi-3 3.8B or Llama 3.2 3B) for compression.
 
 #### Week 1 Sublayer (7-14 days)
+
 **Format**: Hook + 3 key points
 **Detail**: 50%
 **Storage**: `memory/recent/week-1/2026-02-02.json`
@@ -112,16 +116,19 @@ All recent layers use **local LLM** (Phi-3 3.8B or Llama 3.2 3B) for compression
 ```
 
 #### Week 2 Sublayer (14-21 days)
+
 **Format**: Hook + 2 key points
 **Detail**: 40%
 **Compression**: Local LLM
 
 #### Week 3 Sublayer (21-28 days)
+
 **Format**: Hook + 1 key point
 **Detail**: 30%
 **Compression**: Local LLM
 
 #### Week 4 Sublayer (28-48 days)
+
 **Format**: Hook only + reconstruction path
 **Detail**: 20%
 **Compression**: Local LLM
@@ -133,6 +140,7 @@ All recent layers use **local LLM** (Phi-3 3.8B or Llama 3.2 3B) for compression
 Archive layers support **optional API enhancement** for higher-quality compression.
 
 #### Fresh Archive (1-3 months)
+
 **Format**: Hook + key details + active links
 **Detail**: 15%
 **Storage**: `memory/archive/fresh/2026-02/`
@@ -140,16 +148,19 @@ Archive layers support **optional API enhancement** for higher-quality compressi
 **Trigger**: Deep search or link chain
 
 #### Mature Archive (3-6 months)
+
 **Format**: Hook + 3 bullets + weak links
 **Detail**: 8%
 **Compression**: Local LLM (default), GPT-4o-mini (optional)
 
 #### Deep Archive (6-12 months)
+
 **Format**: Hook + reconstruction path
 **Detail**: 3%
 **Compression**: GPT-4o-mini (recommended), Local LLM (fallback)
 
 #### Core Archive (1+ years)
+
 **Format**: Single sentence + date
 **Detail**: 1%
 **Compression**: GPT-4o-mini (recommended), Local LLM (fallback)
@@ -193,6 +204,7 @@ ollama pull llama3.2:3b
 ### Compression Prompts (Local LLM)
 
 **Warm → Recent Week 1**:
+
 ```
 Summarize this conversation into:
 1. One sentence hook
@@ -213,6 +225,7 @@ Output as JSON:
 ```
 
 **Archive Compression (with API)**:
+
 ```
 Extract the essence of this memory. What matters for future retrieval?
 - One sentence that triggers full recall
@@ -227,18 +240,21 @@ Extract the essence of this memory. What matters for future retrieval?
 ## Privacy Levels
 
 ### Level 1: Public
+
 - Normal conversations
 - General knowledge
 - Project details
 - **Storage**: Plaintext, all layers
 
 ### Level 2: Private
+
 - Personal details
 - Credentials (without values)
 - Health/family topics
 - **Storage**: Encrypted content, plaintext keywords/index
 
 ### Level 3: Secret
+
 - Passwords, API keys
 - Sensitive personal info
 - Legal/medical details
@@ -252,9 +268,9 @@ Extract the essence of this memory. What matters for future retrieval?
 // Keywords remain searchable (plaintext)
 
 interface EncryptedMemory {
-  encrypted_content: string;  // AES-256-GCM
+  encrypted_content: string; // AES-256-GCM
   iv: string;
-  keywords: string[];         // Plaintext for indexing
+  keywords: string[]; // Plaintext for indexing
   privacy_level: "private" | "secret";
 }
 ```
@@ -266,6 +282,7 @@ interface EncryptedMemory {
 ### Default Session Start
 
 Load (in order):
+
 1. SOUL.md (identity) — always
 2. Flash (last 48h) — always
 3. Warm (2-7 days) — always
@@ -294,6 +311,7 @@ Ask user: "Tell me more about..."
 ### Link Following (The "Digging")
 
 When retrieving a memory, follow links:
+
 - **Strong links**: Bidirectional, same topic
 - **Weak links**: Unidirectional, related topic
 - **Max depth**: 3 hops (prevents infinite chains)
@@ -301,14 +319,14 @@ When retrieving a memory, follow links:
 ```typescript
 function digMemory(startId: string, depth: number = 0): Memory[] {
   if (depth > 3) return [];
-  
+
   const memory = loadMemory(startId);
   const chain = [memory];
-  
+
   for (const link of memory.linked_to) {
     chain.push(...digMemory(link.id, depth + 1));
   }
-  
+
   return chain;
 }
 ```
@@ -318,15 +336,18 @@ function digMemory(startId: string, depth: number = 0): Memory[] {
 ## Compression Schedule
 
 ### Every 6 Hours (Heartbeat)
+
 - Flash → Warm: Entries >48h old
 - Warm → Recent Week 1: Entries >7d old
 - Cascade Recent Weeks (7 days each)
 
 ### Every 24 Hours
+
 - Recent Week 4 → Fresh Archive: Entries >28d old
 - Update index with new keywords
 
 ### Every 7 Days
+
 - Archive compression (if API enabled)
 - Merge similar keywords
 - Prune orphaned memories
@@ -335,15 +356,15 @@ function digMemory(startId: string, depth: number = 0): Memory[] {
 
 ## Token Budgets
 
-| Layer | Max Tokens | Max Items | Load Strategy |
-|-------|-----------|-----------|---------------|
-| Flash | 800 | 15 | Always |
-| Warm | 600 | 20 | Always |
-| Week 1 | 400 | 10 | Triggered |
-| Week 2 | 300 | 10 | Triggered |
-| Week 3 | 200 | 10 | Triggered |
-| Week 4 | 150 | 10 | Triggered |
-| Archive | Variable | Unlimited | Deep search only |
+| Layer   | Max Tokens | Max Items | Load Strategy    |
+| ------- | ---------- | --------- | ---------------- |
+| Flash   | 800        | 15        | Always           |
+| Warm    | 600        | 20        | Always           |
+| Week 1  | 400        | 10        | Triggered        |
+| Week 2  | 300        | 10        | Triggered        |
+| Week 3  | 200        | 10        | Triggered        |
+| Week 4  | 150        | 10        | Triggered        |
+| Archive | Variable   | Unlimited | Deep search only |
 
 **Max Load**: ~2300 tokens (vs 2200 always loaded before)
 **Typical Load**: ~1500 tokens (Flash + Warm + SOUL)
@@ -452,6 +473,6 @@ memory/
 
 ---
 
-*Specification Version: 1.0*
-*Last Updated: 2026-02-02*
-*Status: Ready for Review*
+_Specification Version: 1.0_
+_Last Updated: 2026-02-02_
+_Status: Ready for Review_

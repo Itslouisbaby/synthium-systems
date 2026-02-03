@@ -3,11 +3,7 @@
  */
 
 import { describe, it, expect, beforeAll } from "vitest";
-import {
-  getCoreMemories,
-  CoreMemories,
-  FlashEntry,
-} from "../src/index.js";
+import { getCoreMemories, CoreMemories, FlashEntry } from "../src/index.js";
 
 // Test setup
 describe("CoreMemories v2.1", () => {
@@ -19,11 +15,7 @@ describe("CoreMemories v2.1", () => {
 
   describe("Flash Entry Management", () => {
     it("should add a normal entry without user flag", () => {
-      const normal = cm.addFlashEntry(
-        "We discussed the weather today",
-        "louis",
-        "conversation",
-      );
+      const normal = cm.addFlashEntry("We discussed the weather today", "louis", "conversation");
 
       expect(normal.emotionalSalience).toBeLessThan(0.85);
       expect(normal.userFlagged).toBe(false);
@@ -64,9 +56,7 @@ describe("CoreMemories v2.1", () => {
     it("should compress flash entry to warm entry", async () => {
       const oldFlagged: FlashEntry = {
         id: `mem_${Date.now() - 49 * 60 * 60 * 1000}_flagged`,
-        timestamp: new Date(
-          Date.now() - 49 * 60 * 60 * 1000,
-        ).toISOString(),
+        timestamp: new Date(Date.now() - 49 * 60 * 60 * 1000).toISOString(),
         type: "conversation",
         content:
           "Remember this: My test recovery code is TEST-RECOVERY-CODE-EXAMPLE. This is test information.",
@@ -88,9 +78,7 @@ describe("CoreMemories v2.1", () => {
     it("should propose high-emotion entries for MEMORY.md", async () => {
       const oldDecision: FlashEntry = {
         id: `mem_${Date.now() - 50 * 60 * 60 * 1000}_decision`,
-        timestamp: new Date(
-          Date.now() - 50 * 60 * 60 * 1000,
-        ).toISOString(),
+        timestamp: new Date(Date.now() - 50 * 60 * 60 * 1000).toISOString(),
         type: "decision",
         content:
           "We decided to build CoreMemories with 3-layer architecture and MEMORY.md integration.",

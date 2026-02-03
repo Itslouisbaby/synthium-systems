@@ -4,8 +4,8 @@
  */
 
 import fs from "node:fs";
-import path from "node:path";
 import http from "node:http";
+import path from "node:path";
 
 // Default configuration
 const DEFAULT_CONFIG: CoreMemoriesConfig = {
@@ -230,9 +230,7 @@ function calculateEmotionalSalience(text: string): number {
     "critical",
     "essential",
   ];
-  const hasEmotion = emotionalWords.some((word) =>
-    text.toLowerCase().includes(word),
-  );
+  const hasEmotion = emotionalWords.some((word) => text.toLowerCase().includes(word));
   return hasEmotion ? 0.8 : 0.5;
 }
 
@@ -258,25 +256,22 @@ export async function checkOllamaAvailable(): Promise<OllamaCheckResult> {
   }
 
   return new Promise((resolve) => {
-    const req = http.get(
-      "http://localhost:11434/api/tags",
-      (res: http.IncomingMessage) => {
-        if (res.statusCode === 200) {
-          let data = "";
-          res.on("data", (chunk: Buffer) => (data += chunk.toString()));
-          res.on("end", () => {
-            try {
-              const models = JSON.parse(data) as { models?: Array<{ name: string }> };
-              resolve({ available: true, models: models.models || [] });
-            } catch {
-              resolve({ available: true, models: [] });
-            }
-          });
-        } else {
-          resolve({ available: false, models: [] });
-        }
-      },
-    );
+    const req = http.get("http://localhost:11434/api/tags", (res: http.IncomingMessage) => {
+      if (res.statusCode === 200) {
+        let data = "";
+        res.on("data", (chunk: Buffer) => (data += chunk.toString()));
+        res.on("end", () => {
+          try {
+            const models = JSON.parse(data) as { models?: Array<{ name: string }> };
+            resolve({ available: true, models: models.models || [] });
+          } catch {
+            resolve({ available: true, models: [] });
+          }
+        });
+      } else {
+        resolve({ available: false, models: [] });
+      }
+    });
 
     req.on("error", () => resolve({ available: false, models: [] }));
     req.setTimeout(2000, () => {
@@ -293,16 +288,11 @@ function deepMerge(
 ): CoreMemoriesConfig {
   const result = { ...target };
   for (const key in source) {
-    if (
-      source[key] &&
-      typeof source[key] === "object" &&
-      !Array.isArray(source[key])
-    ) {
-      (result[key as keyof CoreMemoriesConfig] as Record<string, unknown>) =
-        deepMerge(
-          (result[key as keyof CoreMemoriesConfig] || {}) as CoreMemoriesConfig,
-          source[key] as Record<string, unknown>,
-        ) as unknown as Record<string, unknown>;
+    if (source[key] && typeof source[key] === "object" && !Array.isArray(source[key])) {
+      (result[key as keyof CoreMemoriesConfig] as Record<string, unknown>) = deepMerge(
+        (result[key as keyof CoreMemoriesConfig] || {}) as CoreMemoriesConfig,
+        source[key] as Record<string, unknown>,
+      ) as unknown as Record<string, unknown>;
     } else {
       (result[key as keyof CoreMemoriesConfig] as unknown) = source[key];
     }
@@ -312,7 +302,9 @@ function deepMerge(
 
 // Initialize configuration with auto-detection
 export async function initializeConfig(): Promise<CoreMemoriesConfig> {
-  if (CONFIG) {return CONFIG;}
+  if (CONFIG) {
+    return CONFIG;
+  }
 
   const configPath = path.join(".openclaw", "core-memories-config.json");
   let userConfig: Record<string, unknown> = {};
@@ -327,10 +319,7 @@ export async function initializeConfig(): Promise<CoreMemoriesConfig> {
   }
 
   // Deep merge instead of shallow spread
-  CONFIG = deepMerge(
-    JSON.parse(JSON.stringify(DEFAULT_CONFIG)) as CoreMemoriesConfig,
-    userConfig,
-  );
+  CONFIG = deepMerge(JSON.parse(JSON.stringify(DEFAULT_CONFIG)) as CoreMemoriesConfig, userConfig);
 
   console.log("🔍 CoreMemories: Detecting local LLM...");
   const ollamaCheck = await checkOllamaAvailable();
@@ -379,7 +368,9 @@ class RuleBasedCompression {
       ) {
         keyQuotes.push(sentence.trim());
       }
-      if (keyQuotes.length >= 2) {break;}
+      if (keyQuotes.length >= 2) {
+        break;
+      }
     }
 
     return {
@@ -474,17 +465,13 @@ Output only valid JSON:`;
         keyPoints: parsed.keyPoints || parsed.key_points || [],
         keywords: parsed.keywords || flashEntry.keywords,
         emotionalTone:
-          parsed.emotionalTone ||
-          (flashEntry.emotionalSalience > 0.7 ? "high" : "normal"),
+          parsed.emotionalTone || (flashEntry.emotionalSalience > 0.7 ? "high" : "normal"),
         linkedTo: flashEntry.linkedTo,
         privacyLevel: flashEntry.privacyLevel,
         compressionMethod: "ollama-llm",
       };
     } catch (e) {
-      console.warn(
-        "CoreMemories: LLM compression failed, using fallback:",
-        (e as Error).message,
-      );
+      console.warn("CoreMemories: LLM compression failed, using fallback:", (e as Error).message);
       const fallback = new RuleBasedCompression();
       return fallback.compress(flashEntry);
     }
@@ -525,7 +512,9 @@ class MemoryMdIntegration {
   shouldProposeForMemoryMd(
     entry: WarmEntry,
   ): { reason: string; score?: number; tone?: string } | false {
-    if (!CONFIG?.memoryMd?.enabled) {return false;}
+    if (!CONFIG?.memoryMd?.enabled) {
+      return false;
+    }
 
     const triggers = CONFIG.memoryMd.updateTriggers;
 
@@ -557,27 +546,37 @@ class MemoryMdIntegration {
 
   // Extract essence for MEMORY.md
   extractEssence(entry: WarmEntry): string {
-    if (entry.hook) {return entry.hook;}
-    if (entry.summary) {return entry.summary.substring(0, 200);}
-    if (entry.content) {return entry.content.substring(0, 200);}
+    if (entry.hook) {
+      return entry.hook;
+    }
+    if (entry.summary) {
+      return entry.summary.substring(0, 200);
+    }
+    if (entry.content) {
+      return entry.content.substring(0, 200);
+    }
     return "";
   }
 
   // Determine which section to add to
   suggestSection(entry: WarmEntry): string {
     const sections = CONFIG?.memoryMd?.sections;
-    if (!sections) {return "## Important Memories";}
+    if (!sections) {
+      return "## Important Memories";
+    }
 
-    if (entry.type === "decision") {return sections["decision"];}
-    if (entry.type === "milestone") {return sections["milestone"];}
-    if (
-      entry.keywords.some((k) =>
-        ["project", "product", "app", "platform"].includes(k),
-      )
-    ) {
+    if (entry.type === "decision") {
+      return sections["decision"];
+    }
+    if (entry.type === "milestone") {
+      return sections["milestone"];
+    }
+    if (entry.keywords.some((k) => ["project", "product", "app", "platform"].includes(k))) {
       return sections["project"];
     }
-    if (entry.type === "learning") {return sections["learning"];}
+    if (entry.type === "learning") {
+      return sections["learning"];
+    }
 
     return sections["default"];
   }
@@ -585,7 +584,9 @@ class MemoryMdIntegration {
   // Propose update (called during compression)
   proposeUpdate(entry: WarmEntry): MemoryMdProposal | null {
     const check = this.shouldProposeForMemoryMd(entry);
-    if (!check) {return null;}
+    if (!check) {
+      return null;
+    }
 
     const proposal: MemoryMdProposal = {
       entryId: entry.id,
@@ -632,10 +633,7 @@ class MemoryMdIntegration {
       const nextSection = content.indexOf("##", sectionIndex + 1);
       const insertIndex = nextSection === -1 ? content.length : nextSection;
 
-      content =
-        content.slice(0, insertIndex) +
-        `\n${entryText}\n` +
-        content.slice(insertIndex);
+      content = content.slice(0, insertIndex) + `\n${entryText}\n` + content.slice(insertIndex);
     } else {
       // Create new section at end
       content += `\n${sectionHeader}\n\n${entryText}\n`;
@@ -678,7 +676,9 @@ export class CoreMemories {
   }
 
   async initialize(): Promise<void> {
-    if (this.initialized) {return;}
+    if (this.initialized) {
+      return;
+    }
 
     await initializeConfig();
 
@@ -712,7 +712,9 @@ export class CoreMemories {
   private loadIndex(): IndexData {
     const indexPath = path.join(this.memoryDir, "index.json");
     const data = JSON.parse(fs.readFileSync(indexPath, "utf-8")) as IndexData;
-    if (!data.timestamps) {data.timestamps = {};}
+    if (!data.timestamps) {
+      data.timestamps = {};
+    }
     return data;
   }
 
@@ -739,18 +741,12 @@ export class CoreMemories {
   }
 
   // Flash layer (0-48h)
-  addFlashEntry(
-    content: string,
-    speaker = "user",
-    type = "conversation",
-  ): FlashEntry {
+  addFlashEntry(content: string, speaker = "user", type = "conversation"): FlashEntry {
     const userFlagged = checkUserFlagged(content);
     const emotionalSalience = calculateEmotionalSalience(content);
 
     // Boost salience if user flagged
-    const finalSalience = userFlagged
-      ? Math.max(emotionalSalience, 0.85)
-      : emotionalSalience;
+    const finalSalience = userFlagged ? Math.max(emotionalSalience, 0.85) : emotionalSalience;
 
     const entry: FlashEntry = {
       id: generateId(),
@@ -765,12 +761,7 @@ export class CoreMemories {
       privacyLevel: "public",
     };
 
-    const flashPath = path.join(
-      this.memoryDir,
-      "hot",
-      "flash",
-      "current.json",
-    );
+    const flashPath = path.join(this.memoryDir, "hot", "flash", "current.json");
     let flashData: { entries: FlashEntry[] } = { entries: [] };
 
     if (fs.existsSync(flashPath)) {
@@ -780,9 +771,7 @@ export class CoreMemories {
     }
 
     const cutoff = Date.now() - 48 * 60 * 60 * 1000;
-    flashData.entries = flashData.entries.filter(
-      (e) => new Date(e.timestamp).getTime() > cutoff,
-    );
+    flashData.entries = flashData.entries.filter((e) => new Date(e.timestamp).getTime() > cutoff);
 
     flashData.entries.push(entry);
 
@@ -797,13 +786,10 @@ export class CoreMemories {
   }
 
   getFlashEntries(): FlashEntry[] {
-    const flashPath = path.join(
-      this.memoryDir,
-      "hot",
-      "flash",
-      "current.json",
-    );
-    if (!fs.existsSync(flashPath)) {return [];}
+    const flashPath = path.join(this.memoryDir, "hot", "flash", "current.json");
+    if (!fs.existsSync(flashPath)) {
+      return [];
+    }
 
     const data = JSON.parse(fs.readFileSync(flashPath, "utf-8")) as {
       entries: FlashEntry[];
@@ -823,12 +809,7 @@ export class CoreMemories {
     }
 
     const weekNumber = this.getWeekNumber(new Date(warmEntry.timestamp));
-    const warmPath = path.join(
-      this.memoryDir,
-      "hot",
-      "warm",
-      `week-${weekNumber}.json`,
-    );
+    const warmPath = path.join(this.memoryDir, "hot", "warm", `week-${weekNumber}.json`);
 
     let warmData: {
       week: string;
@@ -859,14 +840,11 @@ export class CoreMemories {
 
   getWarmEntries(): WarmEntry[] {
     const weekNumber = this.getWeekNumber(new Date());
-    const warmPath = path.join(
-      this.memoryDir,
-      "hot",
-      "warm",
-      `week-${weekNumber}.json`,
-    );
+    const warmPath = path.join(this.memoryDir, "hot", "warm", `week-${weekNumber}.json`);
 
-    if (!fs.existsSync(warmPath)) {return [];}
+    if (!fs.existsSync(warmPath)) {
+      return [];
+    }
 
     const data = JSON.parse(fs.readFileSync(warmPath, "utf-8")) as {
       entries: WarmEntry[];
@@ -905,10 +883,7 @@ export class CoreMemories {
     const flash = this.getFlashEntries();
     const warm = this.getWarmEntries();
 
-    const flashTokens = flash.reduce(
-      (sum, e) => sum + Math.ceil(e.content.length / 4),
-      0,
-    );
+    const flashTokens = flash.reduce((sum, e) => sum + Math.ceil(e.content.length / 4), 0);
     const warmTokens = warm.reduce(
       (sum, e) => sum + Math.ceil((e.summary || e.hook || "").length / 4),
       0,
@@ -927,12 +902,7 @@ export class CoreMemories {
   async runCompression(): Promise<void> {
     console.log("🔄 CoreMemories: Running compression...");
 
-    const flashPath = path.join(
-      this.memoryDir,
-      "hot",
-      "flash",
-      "current.json",
-    );
+    const flashPath = path.join(this.memoryDir, "hot", "flash", "current.json");
     if (!fs.existsSync(flashPath)) {
       console.log("   No flash entries to compress");
       return;
@@ -970,16 +940,12 @@ export class CoreMemories {
     console.log(`   ✓ Compressed ${compressed} entries to Warm layer`);
     console.log(`   ✓ Removed compressed entries from Flash`);
     console.log(`   ✓ Flash now has ${toKeep.length} entries`);
-    console.log(
-      `   Mode: ${CONFIG?.engines?.local?.available ? "LLM-enhanced" : "Rule-based"}`,
-    );
+    console.log(`   Mode: ${CONFIG?.engines?.local?.available ? "LLM-enhanced" : "Rule-based"}`);
 
     // Show pending MEMORY.md updates
     const pending = this.memoryMdIntegration.getPendingUpdates();
     if (pending.length > 0) {
-      console.log(
-        `   💡 ${pending.length} entries proposed for MEMORY.md update`,
-      );
+      console.log(`   💡 ${pending.length} entries proposed for MEMORY.md update`);
     }
   }
 
