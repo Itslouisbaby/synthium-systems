@@ -33,7 +33,8 @@ export function getShellConfig(): { shell: string; args: string[] } {
   }
 
   const envShell = process.env.SHELL?.trim();
-  const shellName = envShell ? path.basename(envShell) : "";
+  const resolvedEnvShell = envShell && envShell.length > 0 ? envShell : undefined;
+  const shellName = resolvedEnvShell ? path.basename(resolvedEnvShell) : "";
   // Fish rejects common bashisms used by tools, so prefer bash when detected.
   if (shellName === "fish") {
     const bash = resolveShellFromPath("bash");
@@ -45,8 +46,14 @@ export function getShellConfig(): { shell: string; args: string[] } {
       return { shell: sh, args: ["-c"] };
     }
   }
-  const shell = envShell && envShell.length > 0 ? envShell : "sh";
-  return { shell, args: ["-c"] };
+  if (resolvedEnvShell && fs.existsSync(resolvedEnvShell)) {
+    return { shell: resolvedEnvShell, args: ["-c"] };
+  }
+  const fallbackShell = resolveShellFromPath("bash") || resolveShellFromPath("sh");
+  if (fallbackShell) {
+    return { shell: fallbackShell, args: ["-c"] };
+  }
+  return { shell: "/bin/sh", args: ["-c"] };
 }
 
 function resolveShellFromPath(name: string): string | undefined {
