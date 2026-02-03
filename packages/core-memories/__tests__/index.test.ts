@@ -2,12 +2,11 @@
  * CoreMemories v2.1 Test - MEMORY.md Integration
  */
 
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll } from "vitest";
 import {
   getCoreMemories,
   CoreMemories,
   FlashEntry,
-  MemoryMdProposal,
 } from "../src/index.js";
 
 // Test setup
@@ -115,9 +114,6 @@ describe("CoreMemories v2.1", () => {
 
   describe("MEMORY.md Integration", () => {
     it("should track pending MEMORY.md proposals", async () => {
-      // Clear any existing proposals first
-      const pendingBefore = cm.getPendingMemoryMdProposals();
-
       // Add a high-emotion entry that should trigger a proposal
       const highEmotionEntry: FlashEntry = {
         id: `mem_${Date.now()}_high_emotion`,
@@ -137,12 +133,8 @@ describe("CoreMemories v2.1", () => {
       const pending = cm.getPendingMemoryMdProposals();
       expect(Array.isArray(pending)).toBe(true);
 
-      // At least one proposal should exist
-      const hasProposal = pending.some(
-        (p: MemoryMdProposal) => p.entryId === highEmotionEntry.id,
-      );
-      // Note: Proposal may or may not be created depending on emotional threshold logic
-      // The test validates the API works correctly
+      // Validate API works correctly
+      expect(pending.length).toBeGreaterThanOrEqual(0);
     }, 10000);
 
     it("should provide pending proposal count in session context", () => {

@@ -3,7 +3,7 @@
  * Connects CoreMemories with CRON, HEARTBEAT, and reminders
  */
 
-import { getCoreMemories, CoreMemories } from "./index.js";
+import { getCoreMemories } from "./index.js";
 
 export interface SmartReminder {
   text: string;
@@ -103,9 +103,15 @@ export async function createSmartReminder(
   const context = uniqueEntries
     .slice(0, 3)
     .map((e) => {
-      if ("content" in e && e.content) return e.content.substring(0, 100);
-      if ("summary" in e && e.summary) return e.summary;
-      if ("hook" in e && e.hook) return e.hook;
+      if ("content" in e && e.content) {
+        return e.content.substring(0, 100);
+      }
+      if ("summary" in e && e.summary) {
+        return e.summary;
+      }
+      if ("hook" in e && e.hook) {
+        return e.hook;
+      }
       return "";
     })
     .filter(Boolean);

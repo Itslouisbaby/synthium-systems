@@ -181,7 +181,7 @@ function getCurrentTimestamp(): string {
 }
 
 function extractKeywords(text: string): string[] {
-  const stopWords = [
+  const stopWords = new Set([
     "about",
     "would",
     "could",
@@ -201,12 +201,12 @@ function extractKeywords(text: string): string[] {
     "them",
     "than",
     "then",
-  ];
+  ]);
   const words = text
     .toLowerCase()
     .replace(/[^a-z0-9\s]/g, " ")
     .split(/\s+/)
-    .filter((w) => w.length > 4 && !stopWords.includes(w));
+    .filter((w) => w.length > 4 && !stopWords.has(w));
   return [...new Set(words)].slice(0, 8);
 }
 
@@ -312,7 +312,7 @@ function deepMerge(
 
 // Initialize configuration with auto-detection
 export async function initializeConfig(): Promise<CoreMemoriesConfig> {
-  if (CONFIG) return CONFIG;
+  if (CONFIG) {return CONFIG;}
 
   const configPath = path.join(".openclaw", "core-memories-config.json");
   let userConfig: Record<string, unknown> = {};
@@ -379,7 +379,7 @@ class RuleBasedCompression {
       ) {
         keyQuotes.push(sentence.trim());
       }
-      if (keyQuotes.length >= 2) break;
+      if (keyQuotes.length >= 2) {break;}
     }
 
     return {
@@ -525,7 +525,7 @@ class MemoryMdIntegration {
   shouldProposeForMemoryMd(
     entry: WarmEntry,
   ): { reason: string; score?: number; tone?: string } | false {
-    if (!CONFIG?.memoryMd?.enabled) return false;
+    if (!CONFIG?.memoryMd?.enabled) {return false;}
 
     const triggers = CONFIG.memoryMd.updateTriggers;
 
@@ -557,19 +557,19 @@ class MemoryMdIntegration {
 
   // Extract essence for MEMORY.md
   extractEssence(entry: WarmEntry): string {
-    if (entry.hook) return entry.hook;
-    if (entry.summary) return entry.summary.substring(0, 200);
-    if (entry.content) return entry.content.substring(0, 200);
+    if (entry.hook) {return entry.hook;}
+    if (entry.summary) {return entry.summary.substring(0, 200);}
+    if (entry.content) {return entry.content.substring(0, 200);}
     return "";
   }
 
   // Determine which section to add to
   suggestSection(entry: WarmEntry): string {
     const sections = CONFIG?.memoryMd?.sections;
-    if (!sections) return "## Important Memories";
+    if (!sections) {return "## Important Memories";}
 
-    if (entry.type === "decision") return sections["decision"];
-    if (entry.type === "milestone") return sections["milestone"];
+    if (entry.type === "decision") {return sections["decision"];}
+    if (entry.type === "milestone") {return sections["milestone"];}
     if (
       entry.keywords.some((k) =>
         ["project", "product", "app", "platform"].includes(k),
@@ -577,7 +577,7 @@ class MemoryMdIntegration {
     ) {
       return sections["project"];
     }
-    if (entry.type === "learning") return sections["learning"];
+    if (entry.type === "learning") {return sections["learning"];}
 
     return sections["default"];
   }
@@ -585,7 +585,7 @@ class MemoryMdIntegration {
   // Propose update (called during compression)
   proposeUpdate(entry: WarmEntry): MemoryMdProposal | null {
     const check = this.shouldProposeForMemoryMd(entry);
-    if (!check) return null;
+    if (!check) {return null;}
 
     const proposal: MemoryMdProposal = {
       entryId: entry.id,
@@ -678,7 +678,7 @@ export class CoreMemories {
   }
 
   async initialize(): Promise<void> {
-    if (this.initialized) return;
+    if (this.initialized) {return;}
 
     await initializeConfig();
 
@@ -712,7 +712,7 @@ export class CoreMemories {
   private loadIndex(): IndexData {
     const indexPath = path.join(this.memoryDir, "index.json");
     const data = JSON.parse(fs.readFileSync(indexPath, "utf-8")) as IndexData;
-    if (!data.timestamps) data.timestamps = {};
+    if (!data.timestamps) {data.timestamps = {};}
     return data;
   }
 
@@ -803,7 +803,7 @@ export class CoreMemories {
       "flash",
       "current.json",
     );
-    if (!fs.existsSync(flashPath)) return [];
+    if (!fs.existsSync(flashPath)) {return [];}
 
     const data = JSON.parse(fs.readFileSync(flashPath, "utf-8")) as {
       entries: FlashEntry[];
@@ -866,7 +866,7 @@ export class CoreMemories {
       `week-${weekNumber}.json`,
     );
 
-    if (!fs.existsSync(warmPath)) return [];
+    if (!fs.existsSync(warmPath)) {return [];}
 
     const data = JSON.parse(fs.readFileSync(warmPath, "utf-8")) as {
       entries: WarmEntry[];
