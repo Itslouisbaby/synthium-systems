@@ -1,0 +1,78 @@
+{
+  "week": "week-4",
+  "entries": [
+    {
+      "id": "mem_1769985820870_flagged",
+      "timestamp": "2026-02-01T22:43:40.870Z",
+      "summary": "Remember this: The test recovery code is TEST1234EXAMPLE5678. This is test information.",
+      "key_quotes": [],
+      "emotionalTone": "high",
+      "keywords": ["recovery", "code", "test", "information"],
+      "linkedTo": [],
+      "privacyLevel": "public",
+      "compressionMethod": "rules",
+      "emotionalSalience": 0.9,
+      "userFlagged": true,
+      "type": "conversation",
+      "memoryMdProposal": {
+        "entryId": "mem_1769985820870_flagged",
+        "timestamp": "2026-02-01T22:43:40.870Z",
+        "essence": "Remember this: The test recovery code is TEST1234EXAMPLE5678. This is test information.",
+        "section": "## Important Memories",
+        "reason": "high_emotion",
+        "type": "conversation",
+        "keywords": ["recovery", "code", "test", "information"]
+      }
+    },
+    {
+      "id": "mem_1769982230890_decision",
+      "timestamp": "2026-02-01T21:43:50.890Z",
+      "summary": "We decided to build CoreMemories with 3-layer architecture and MEMORY.md integration.",
+      "key_quotes": [],
+      "emotionalTone": "high",
+      "keywords": ["decided", "coreMemories", "architecture", "integration"],
+      "linkedTo": [],
+      "privacyLevel": "public",
+      "compressionMethod": "rules",
+      "emotionalSalience": 0.8,
+      "userFlagged": false,
+      "type": "decision",
+      "memoryMdProposal": {
+        "entryId": "mem_1769982230890_decision",
+        "timestamp": "2026-02-01T21:43:50.890Z",
+        "essence": "We decided to build CoreMemories with 3-layer architecture and MEMORY.md integration.",
+        "section": "## Decisions Made",
+        "reason": "high_emotion",
+        "type": "decision",
+        "keywords": ["decided", "coreMemories", "architecture", "integration"]
+      }
+    },
+    {
+      "id": "mem_1770162240911_high_emotion",
+      "timestamp": "2026-02-03T23:44:00.911Z",
+      "hook": "The speakers express immense pride over an amazing achievement.",
+      "keyPoints": [
+        "An achievement is being recognized.",
+        "The achievement is characterized as amazing.",
+        "The speakers feel proud."
+      ],
+      "keywords": ["achievement", "proud", "amazing", "celebration", "success"],
+      "emotionalTone": "high",
+      "linkedTo": [],
+      "privacyLevel": "public",
+      "compressionMethod": "ollama-llm",
+      "emotionalSalience": 0.9,
+      "userFlagged": false,
+      "type": "milestone",
+      "memoryMdProposal": {
+        "entryId": "mem_1770162240911_high_emotion",
+        "timestamp": "2026-02-03T23:44:00.911Z",
+        "essence": "The speakers express immense pride over an amazing achievement.",
+        "section": "## Milestones",
+        "reason": "high_emotion",
+        "type": "milestone",
+        "keywords": ["achievement", "proud", "amazing", "celebration", "success"]
+      }
+    }
+  ]
+}

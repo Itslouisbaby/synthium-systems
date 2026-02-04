@@ -249,9 +249,10 @@ function checkUserFlagged(text: string): boolean {
 }
 
 // Auto-detection: Check if Ollama is available
-export async function checkOllamaAvailable(): Promise<OllamaCheckResult> {
+export async function checkOllamaAvailable(endpoint?: string): Promise<OllamaCheckResult> {
+  const baseUrl = endpoint || "http://localhost:11434";
   return new Promise((resolve) => {
-    const req = http.get("http://localhost:11434/api/tags", (res: http.IncomingMessage) => {
+    const req = http.get(`${baseUrl}/api/tags`, (res: http.IncomingMessage) => {
       if (res.statusCode === 200) {
         let data = "";
         res.on("data", (chunk: Buffer) => (data += chunk.toString()));
@@ -274,6 +275,39 @@ export async function checkOllamaAvailable(): Promise<OllamaCheckResult> {
       resolve({ available: false, models: [] });
     });
   });
+}
+
+// Helper function to recursively merge two plain objects
+function recursiveMerge(
+  target: Record<string, unknown>,
+  source: Record<string, unknown>,
+): Record<string, unknown> {
+  const result = { ...target };
+
+  for (const key in source) {
+    const sourceValue = source[key];
+    const targetValue = result[key];
+
+    // If both source and target values are plain objects, merge recursively
+    if (
+      sourceValue &&
+      typeof sourceValue === "object" &&
+      !Array.isArray(sourceValue) &&
+      targetValue &&
+      typeof targetValue === "object" &&
+      !Array.isArray(targetValue)
+    ) {
+      result[key] = recursiveMerge(
+        targetValue as Record<string, unknown>,
+        sourceValue as Record<string, unknown>,
+      );
+    } else if (typeof sourceValue !== "function") {
+      // Primitive value - assign directly
+      result[key] = sourceValue;
+    }
+  }
+
+  return result;
 }
 
 // Type-safe deep merge that only merges known config keys
@@ -301,15 +335,13 @@ function deepMerge(
       result[key as keyof CoreMemoriesConfig] &&
       typeof result[key as keyof CoreMemoriesConfig] === "object"
     ) {
-      // Recursively merge nested objects
+      // Recursively merge nested objects using the recursive helper
       const targetValue = result[key as keyof CoreMemoriesConfig] as Record<string, unknown>;
-      const mergedNested = { ...targetValue };
+      const mergedNested = recursiveMerge(targetValue, sourceValue as Record<string, unknown>);
 
+      // Validate merged keys to warn about unknown nested keys
       for (const nestedKey in sourceValue) {
-        // Only merge keys that exist in the target nested object
-        if (nestedKey in targetValue) {
-          mergedNested[nestedKey] = (sourceValue as Record<string, unknown>)[nestedKey];
-        } else {
+        if (!(nestedKey in targetValue)) {
           console.warn(`CoreMemories: Ignoring unknown nested config key "${key}.${nestedKey}"`);
         }
       }
@@ -346,7 +378,7 @@ export async function initializeConfig(): Promise<CoreMemoriesConfig> {
   CONFIG = deepMerge(JSON.parse(JSON.stringify(DEFAULT_CONFIG)) as CoreMemoriesConfig, userConfig);
 
   console.log("🔍 CoreMemories: Detecting local LLM...");
-  const ollamaCheck = await checkOllamaAvailable();
+  const ollamaCheck = await checkOllamaAvailable(CONFIG.engines.local.endpoint);
 
   if (ollamaCheck.available) {
     CONFIG.engines.local.available = true;
@@ -743,6 +775,9 @@ export class CoreMemories {
 
   private loadIndex(): IndexData {
     const indexPath = path.join(this.memoryDir, "index.json");
+    if (!fs.existsSync(indexPath)) {
+      return { keywords: {}, timestamps: {}, lastUpdated: getCurrentTimestamp() };
+    }
     const data = JSON.parse(fs.readFileSync(indexPath, "utf-8")) as IndexData;
     if (!data.timestamps) {
       data.timestamps = {};
@@ -760,11 +795,12 @@ export class CoreMemories {
     const index = this.loadIndex();
 
     entry.keywords.forEach((keyword) => {
-      if (!index.keywords[keyword]) {
-        index.keywords[keyword] = [];
+      const normalized = keyword.toLowerCase();
+      if (!index.keywords[normalized]) {
+        index.keywords[normalized] = [];
       }
-      if (!index.keywords[keyword].includes(entry.id)) {
-        index.keywords[keyword].push(entry.id);
+      if (!index.keywords[normalized].includes(entry.id)) {
+        index.keywords[normalized].push(entry.id);
       }
     });
 

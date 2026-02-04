@@ -3,7 +3,7 @@
  * Connects CoreMemories with CRON, HEARTBEAT, and reminders
  */
 
-import { getCoreMemories } from "./index.js";
+import { getCoreMemories } from "./index";
 
 export interface SmartReminder {
   text: string;
