@@ -11,9 +11,9 @@
     "openclaw"
   ],
   "license": "MIT",
-  "author": "Louis Angeli <lucas.was.here@proton.me>",
+  "author": "OpenClaw Contributors <contributors@openclaw.org>",
   "contributors": [
-    "Lucas (OpenClaw Agent)"
+    "OpenClaw Community"
   ],
   "repository": {
     "type": "git",
@@ -43,8 +43,13 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
   },
+  "devDependencies": {
+    "@types/node": "^25.2.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  },
   "peerDependencies": {
-    "openclaw": ">=2026.2.0"
+    "@openclaw/openclaw": ">=2026.2.0"
   },
   "engines": {
     "node": ">=18.0.0"

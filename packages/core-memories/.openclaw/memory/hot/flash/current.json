@@ -1,0 +1,229 @@
+{
+  "entries": [
+    {
+      "id": "mem_1770162010083_5tni16uth",
+      "timestamp": "2026-02-03T23:40:10.083Z",
+      "type": "decision",
+      "content": "We decided to migrate to the new database system. This is a major change but will improve performance!",
+      "speaker": "user",
+      "keywords": [
+        "decided",
+        "migrate",
+        "database",
+        "system",
+        "major",
+        "change",
+        "improve",
+        "performance"
+      ],
+      "emotionalSalience": 0.5,
+      "userFlagged": false,
+      "linkedTo": [],
+      "privacyLevel": "public"
+    },
+    {
+      "id": "mem_1770164941013_znr7ai3a6",
+      "timestamp": "2026-02-04T00:29:01.013Z",
+      "type": "conversation",
+      "content": "We discussed the weather today",
+      "speaker": "user",
+      "keywords": ["discussed", "weather", "today"],
+      "emotionalSalience": 0.5,
+      "userFlagged": false,
+      "linkedTo": [],
+      "privacyLevel": "public"
+    },
+    {
+      "id": "mem_1770164941016_8hykxpuw3",
+      "timestamp": "2026-02-04T00:29:01.016Z",
+      "type": "conversation",
+      "content": "Remember this: The API integration is scheduled for next month. This is important for the project.",
+      "speaker": "user",
+      "keywords": ["remember", "integration", "scheduled", "month", "important", "project"],
+      "emotionalSalience": 0.85,
+      "userFlagged": true,
+      "linkedTo": [],
+      "privacyLevel": "public"
+    },
+    {
+      "id": "mem_1770164941017_vmel5em11",
+      "timestamp": "2026-02-04T00:29:01.017Z",
+      "type": "decision",
+      "content": "We decided to migrate to the new database system. This is a major change but will improve performance!",
+      "speaker": "user",
+      "keywords": [
+        "decided",
+        "migrate",
+        "database",
+        "system",
+        "major",
+        "change",
+        "improve",
+        "performance"
+      ],
+      "emotionalSalience": 0.5,
+      "userFlagged": false,
+      "linkedTo": [],
+      "privacyLevel": "public"
+    },
+    {
+      "id": "mem_1770165048377_6kgl9ndjx",
+      "timestamp": "2026-02-04T00:30:48.377Z",
+      "type": "conversation",
+      "content": "We discussed the weather today",
+      "speaker": "user",
+      "keywords": ["discussed", "weather", "today"],
+      "emotionalSalience": 0.5,
+      "userFlagged": false,
+      "linkedTo": [],
+      "privacyLevel": "public"
+    },
+    {
+      "id": "mem_1770165048380_p3hzkew29",
+      "timestamp": "2026-02-04T00:30:48.380Z",
+      "type": "conversation",
+      "content": "Remember this: The API integration is scheduled for next month. This is important for the project.",
+      "speaker": "user",
+      "keywords": ["remember", "integration", "scheduled", "month", "important", "project"],
+      "emotionalSalience": 0.85,
+      "userFlagged": true,
+      "linkedTo": [],
+      "privacyLevel": "public"
+    },
+    {
+      "id": "mem_1770165048381_qdxe0je4l",
+      "timestamp": "2026-02-04T00:30:48.381Z",
+      "type": "decision",
+      "content": "We decided to migrate to the new database system. This is a major change but will improve performance!",
+      "speaker": "user",
+      "keywords": [
+        "decided",
+        "migrate",
+        "database",
+        "system",
+        "major",
+        "change",
+        "improve",
+        "performance"
+      ],
+      "emotionalSalience": 0.5,
+      "userFlagged": false,
+      "linkedTo": [],
+      "privacyLevel": "public"
+    },
+    {
+      "id": "mem_1770196219535_ij77oefut",
+      "timestamp": "2026-02-04T09:10:19.535Z",
+      "type": "conversation",
+      "content": "We discussed the weather today",
+      "speaker": "user",
+      "keywords": ["discussed", "weather", "today"],
+      "emotionalSalience": 0.5,
+      "userFlagged": false,
+      "linkedTo": [],
+      "privacyLevel": "public"
+    },
+    {
+      "id": "mem_1770196219538_67reqhvle",
+      "timestamp": "2026-02-04T09:10:19.538Z",
+      "type": "conversation",
+      "content": "Remember this: The API integration is scheduled for next month. This is important for the project.",
+      "speaker": "user",
+      "keywords": ["remember", "integration", "scheduled", "month", "important", "project"],
+      "emotionalSalience": 0.85,
+      "userFlagged": true,
+      "linkedTo": [],
+      "privacyLevel": "public"
+    },
+    {
+      "id": "mem_1770196219539_ta90kgdxe",
+      "timestamp": "2026-02-04T09:10:19.539Z",
+      "type": "decision",
+      "content": "We decided to migrate to the new database system. This is a major change but will improve performance!",
+      "speaker": "user",
+      "keywords": [
+        "decided",
+        "migrate",
+        "database",
+        "system",
+        "major",
+        "change",
+        "improve",
+        "performance"
+      ],
+      "emotionalSalience": 0.5,
+      "userFlagged": false,
+      "linkedTo": [],
+      "privacyLevel": "public"
+    },
+    {
+      "id": "mem_1770196243662_38g17dai2",
+      "timestamp": "2026-02-04T09:10:43.662Z",
+      "type": "conversation",
+      "content": "Remember this: The API integration is scheduled for next month. This is important for the project.",
+      "speaker": "user",
+      "keywords": ["remember", "integration", "scheduled", "month", "important", "project"],
+      "emotionalSalience": 0.85,
+      "userFlagged": true,
+      "linkedTo": [],
+      "privacyLevel": "public"
+    },
+    {
+      "id": "mem_1770196247818_e7m09cf1f",
+      "timestamp": "2026-02-04T09:10:47.818Z",
+      "type": "conversation",
+      "content": "We discussed the weather today",
+      "speaker": "user",
+      "keywords": ["discussed", "weather", "today"],
+      "emotionalSalience": 0.5,
+      "userFlagged": false,
+      "linkedTo": [],
+      "privacyLevel": "public"
+    },
+    {
+      "id": "mem_1770196247822_z8aykx7eg",
+      "timestamp": "2026-02-04T09:10:47.822Z",
+      "type": "conversation",
+      "content": "Remember this: The API integration is scheduled for next month. This is important for the project.",
+      "speaker": "user",
+      "keywords": ["remember", "integration", "scheduled", "month", "important", "project"],
+      "emotionalSalience": 0.85,
+      "userFlagged": true,
+      "linkedTo": [],
+      "privacyLevel": "public"
+    },
+    {
+      "id": "mem_1770196247824_4lubc6vp4",
+      "timestamp": "2026-02-04T09:10:47.824Z",
+      "type": "decision",
+      "content": "We decided to migrate to the new database system. This is a major change but will improve performance!",
+      "speaker": "user",
+      "keywords": [
+        "decided",
+        "migrate",
+        "database",
+        "system",
+        "major",
+        "change",
+        "improve",
+        "performance"
+      ],
+      "emotionalSalience": 0.5,
+      "userFlagged": false,
+      "linkedTo": [],
+      "privacyLevel": "public"
+    },
+    {
+      "id": "mem_1770196269209_xl7n1m002",
+      "timestamp": "2026-02-04T09:11:09.209Z",
+      "type": "test",
+      "content": "Testing the keyword search functionality with unique keywords",
+      "speaker": "test",
+      "keywords": ["testing", "keyword", "search", "functionality", "unique", "keywords"],
+      "emotionalSalience": 0.5,
+      "userFlagged": false,
+      "linkedTo": [],
+      "privacyLevel": "public"
+    }
+  ]
+}

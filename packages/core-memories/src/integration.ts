@@ -48,7 +48,7 @@ export async function heartbeatMaintenance(): Promise<MaintenanceResult> {
   const cm = await getCoreMemories();
 
   // 1. Run compression (Flash → Warm)
-  await cm.runCompression();
+  const compressed = await cm.runCompression();
 
   // 2. Get pending MEMORY.md proposals
   const pending = cm.getPendingMemoryMdProposals();
@@ -62,7 +62,7 @@ export async function heartbeatMaintenance(): Promise<MaintenanceResult> {
   console.log(`   📊 Status: ${context.flash.length} flash, ${context.warm.length} warm entries`);
 
   return {
-    compressed: true,
+    compressed,
     pendingMemoryMdUpdates: pending.length,
     totalTokens: context.totalTokens,
   };
@@ -87,9 +87,15 @@ export async function createSmartReminder(params: SmartReminderParams): Promise<
   }> = [];
 
   // Search by keywords
+  const seenIds = new Set<string>();
   for (const keyword of keywords) {
     const results = cm.findByKeyword(keyword);
-    contextEntries.push(...results.flash, ...results.warm);
+    for (const entry of [...results.flash, ...results.warm]) {
+      if (!seenIds.has(entry.id)) {
+        seenIds.add(entry.id);
+        contextEntries.push(entry);
+      }
+    }
   }
 
   // Deduplicate
@@ -159,11 +165,12 @@ export async function storeTaskWithContext(task: string): Promise<TaskEntry> {
   const cm = await getCoreMemories();
 
   // Extract keywords from task
-  const keywords = task
+  const rawKeywords = task
     .toLowerCase()
     .replace(/[^a-z0-9\s]/g, " ")
     .split(/\s+/)
     .filter((w) => w.length > 4);
+  const keywords = Array.from(new Set(rawKeywords));
 
   // Find related memories
   const relatedMemories: Array<{ keyword: string; flash: number; warm: number }> = [];

@@ -35,7 +35,7 @@ CoreMemories is a hierarchical, event-driven memory system for OpenClaw agents t
     {
       "id": "msg_001",
       "timestamp": "2026-02-02T18:30:00Z",
-      "speaker": "louis",
+      "speaker": "user",
       "content": "exact message",
       "emotional_markers": ["excited", "curious"],
       "linked_to": ["msg_000"]
@@ -61,10 +61,10 @@ CoreMemories is a hierarchical, event-driven memory system for OpenClaw agents t
     {
       "id": "mem_001",
       "timestamp": "2026-02-01T14:00:00Z",
-      "summary": "Configured voice APIs",
-      "key_quotes": ["Try and figure it out"],
-      "emotional_tone": "proud",
-      "keywords": ["voice", "elevenlabs", "twilio"],
+      "summary": "Configured system APIs",
+      "key_quotes": ["This needs to be remembered"],
+      "emotional_tone": "focused",
+      "keywords": ["api", "configuration", "system"],
       "linked_to": ["mem_000"]
     }
   ]
@@ -100,7 +100,7 @@ All recent layers use **local LLM** (Phi-3 3.8B or Llama 3.2 3B) for compression
     {
       "id": "mem_100",
       "timestamp": "2026-01-28T10:00:00Z",
-      "hook": "Designed hierarchical memory system with Louis",
+      "hook": "Designed hierarchical memory system with the team",
       "key_points": [
         "3-layer architecture (Hot/Recent/Archive)",
         "Age-based compression (48h/7d/weekly)",
