@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeAll } from "vitest";
-import { getCoreMemories, CoreMemories, FlashEntry } from "../src/index";
+import { getCoreMemories, CoreMemories, FlashEntry } from "../src/index.js";
 
 // Test setup
 describe("CoreMemories v2.1", () => {

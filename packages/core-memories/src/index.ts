@@ -994,13 +994,13 @@ export class CoreMemories {
   }
 
   // Compression routine with MEMORY.md proposals
-  async runCompression(): Promise<void> {
+  async runCompression(): Promise<boolean> {
     console.log("🔄 CoreMemories: Running compression...");
 
     const flashPath = path.join(this.memoryDir, "hot", "flash", "current.json");
     if (!fs.existsSync(flashPath)) {
       console.log("   No flash entries to compress");
-      return;
+      return false;
     }
 
     const flashData = JSON.parse(fs.readFileSync(flashPath, "utf-8")) as {
@@ -1042,6 +1042,8 @@ export class CoreMemories {
     if (pending.length > 0) {
       console.log(`   💡 ${pending.length} entries proposed for MEMORY.md update`);
     }
+
+    return compressed > 0;
   }
 
   // Expert: Approve MEMORY.md update
