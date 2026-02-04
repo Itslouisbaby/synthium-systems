@@ -467,8 +467,6 @@ Output only valid JSON:`;
           stream: false,
         });
 
-        const req = http.request(
-          {
             hostname: "localhost",
             port: 11434,
             path: "/api/generate",
