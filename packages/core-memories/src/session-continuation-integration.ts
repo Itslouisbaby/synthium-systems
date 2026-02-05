@@ -48,7 +48,10 @@ export async function getSmartReminderContext(
   reminderTopic: string,
 ): Promise<string> {
   try {
-    const flashResults: KeywordSearchResult = coreMemories.findByKeyword(reminderTopic);
+    // Support both sync and async CoreMemories implementations.
+    const flashResults: KeywordSearchResult = await Promise.resolve(
+      coreMemories.findByKeyword(reminderTopic) as unknown as KeywordSearchResult,
+    );
 
     if (flashResults.flash.length > 0) {
       const context = flashResults.flash
