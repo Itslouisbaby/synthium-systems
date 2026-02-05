@@ -10,6 +10,9 @@ export type NeuronWavesState = {
     startedAtMs: number;
     id: string;
   };
+
+  /** Consequence signal: consecutive wave failures (used for auto rollback in devLevel=3). */
+  failureStreak?: number;
 };
 
 export const DEFAULT_STATE: NeuronWavesState = {
@@ -45,7 +48,11 @@ export async function loadNeuronWavesState(workspaceDir: string): Promise<Neuron
       parsed.running.id.trim()
         ? { startedAtMs: parsed.running.startedAtMs, id: parsed.running.id.trim() }
         : undefined;
-    return { nextRunAtMs, running };
+    const failureStreak =
+      typeof parsed.failureStreak === "number" && Number.isFinite(parsed.failureStreak)
+        ? Math.max(0, Math.floor(parsed.failureStreak))
+        : 0;
+    return { nextRunAtMs, running, failureStreak };
   } catch {
     // ignore
   }

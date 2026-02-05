@@ -12,7 +12,13 @@ import {
 import { createSubsystemLogger } from "../logging/subsystem.js";
 import { upsertBacklogItem } from "./backlog.js";
 import { resolveNeuronWavesConfigFromEnv } from "./config.js";
-import { appendLedgerEvent, appendPolicyHistory, writeSnapshot } from "./learning/index.js";
+import {
+  appendLedgerEvent,
+  appendPolicyHistory,
+  decidePolicyRollback,
+  rollbackLastPolicyChange,
+  writeSnapshot,
+} from "./learning/index.js";
 import { loadNeuronWavesPolicy, saveNeuronWavesPolicy } from "./policy/index.js";
 import { tryPostGhPrComment } from "./reporters/github-gh.js";
 import { appendNeuronWaveTrace, loadNeuronWavesState, saveNeuronWavesState } from "./state.js";
@@ -73,6 +79,7 @@ export function startNeuronWavesRunner(opts: { cfg: OpenClawConfig }): NeuronWav
 
     const persisted = await loadNeuronWavesState(workspaceDir);
     const due = persisted.nextRunAtMs <= 0 || nowMs >= persisted.nextRunAtMs;
+    let failureStreak = persisted.failureStreak ?? 0;
 
     // single-flight guard
     if (
@@ -218,13 +225,47 @@ export function startNeuronWavesRunner(opts: { cfg: OpenClawConfig }): NeuronWav
         prNumber: nwCfg.pr.number,
         body,
       });
+
+      await appendLedgerEvent({
+        workspaceDir,
+        kind: "consequence.observed",
+        payload: {
+          runId,
+          kind: "pr.comment",
+          ok: res.ok,
+          reason: res.ok ? undefined : res.reason,
+        },
+        nowMs,
+      });
+
       if (!res.ok) {
+        failureStreak += 1;
         log.debug(`pr comment skipped: ${res.reason}`);
+      } else {
+        failureStreak = 0;
       }
     }
 
-    // release lock
-    await saveNeuronWavesState(workspaceDir, { nextRunAtMs });
+    // Auto rollback (devLevel=3): if we observe repeated failures, revert last policy change.
+    const policyForRollback = await loadNeuronWavesPolicy(workspaceDir);
+    const rollback = decidePolicyRollback({ policy: policyForRollback, failureStreak });
+    if (rollback.shouldRollback) {
+      const res = await rollbackLastPolicyChange({
+        workspaceDir,
+        nowMs,
+        reason: rollback.reason,
+      });
+      await appendLedgerEvent({
+        workspaceDir,
+        kind: "policy.rollback",
+        payload: { runId, reason: rollback.reason, result: res },
+        nowMs,
+      });
+      failureStreak = 0;
+    }
+
+    // release lock + persist streak
+    await saveNeuronWavesState(workspaceDir, { nextRunAtMs, failureStreak });
 
     // immediate nudge: schedule an extra near-immediate tick
     schedule(2_000);
