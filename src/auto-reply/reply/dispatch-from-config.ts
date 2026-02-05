@@ -18,6 +18,30 @@ import { formatAbortReplyText, tryFastAbortFromMessage } from "./abort.js";
 import { shouldSkipDuplicateInbound } from "./inbound-dedupe.js";
 import { isRoutableChannel, routeReply } from "./route-reply.js";
 
+async function maybeRecordCoreMemoriesEntry(params: {
+  text: string;
+  speaker: string;
+  type: string;
+}): Promise<void> {
+  try {
+    const trimmed = params.text.trim();
+    if (!trimmed) {
+      return;
+    }
+
+    const mod = (await import("@openclaw/core-memories")) as {
+      getCoreMemories: () => Promise<{
+        addFlashEntry: (text: string, speaker?: string, type?: string) => unknown;
+      }>;
+    };
+
+    const cm = await mod.getCoreMemories();
+    cm.addFlashEntry(trimmed, params.speaker, params.type);
+  } catch {
+    // Best-effort: CoreMemories may not be built/available in some installs.
+  }
+}
+
 const AUDIO_PLACEHOLDER_RE = /^<media:audio>(\s*\([^)]*\))?$/i;
 const AUDIO_HEADER_RE = /^\[Audio\b/i;
 
@@ -143,6 +167,25 @@ export async function dispatchReplyFromConfig(params: {
   if (shouldSkipDuplicateInbound(ctx)) {
     recordProcessed("skipped", { reason: "duplicate" });
     return { queuedFinal: false, counts: dispatcher.getQueuedCounts() };
+  }
+
+  // CoreMemories ingestion (best-effort): record inbound message text.
+  {
+    const inboundText =
+      typeof ctx.BodyForCommands === "string"
+        ? ctx.BodyForCommands
+        : typeof ctx.RawBody === "string"
+          ? ctx.RawBody
+          : typeof ctx.Body === "string"
+            ? ctx.Body
+            : "";
+    const inboundSpeaker =
+      typeof ctx.SenderName === "string" && ctx.SenderName.trim() ? ctx.SenderName.trim() : "user";
+    void maybeRecordCoreMemoriesEntry({
+      text: inboundText,
+      speaker: inboundSpeaker,
+      type: "conversation",
+    });
   }
 
   const inboundAudio = isInboundAudioContext(ctx);
@@ -352,6 +395,15 @@ export async function dispatchReplyFromConfig(params: {
     let queuedFinal = false;
     let routedFinalCount = 0;
     for (const reply of replies) {
+      // CoreMemories ingestion (best-effort): record assistant final reply text.
+      if (reply.text) {
+        void maybeRecordCoreMemoriesEntry({
+          text: reply.text,
+          speaker: "assistant",
+          type: "assistant_reply",
+        });
+      }
+
       const ttsReply = await maybeApplyTtsToPayload({
         payload: reply,
         cfg,
