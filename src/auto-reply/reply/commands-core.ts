@@ -20,6 +20,7 @@ import {
   handleWhoamiCommand,
 } from "./commands-info.js";
 import { handleModelsCommand } from "./commands-models.js";
+import { handleNeuronWavesCommand } from "./commands-neuronwaves.js";
 import { handlePluginCommand } from "./commands-plugin.js";
 import {
   handleAbortTrigger,
@@ -57,6 +58,7 @@ export async function handleCommands(params: HandleCommandsParams): Promise<Comm
       handleConfigCommand,
       handleDebugCommand,
       handleModelsCommand,
+      handleNeuronWavesCommand,
       handleStopCommand,
       handleCompactCommand,
       handleAbortTrigger,
