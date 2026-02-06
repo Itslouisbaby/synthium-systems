@@ -1,9 +1,11 @@
 /**
- * CoreMemories Integration Layer
- * Connects CoreMemories with CRON, HEARTBEAT, and reminders
+ * CoreMemories integration helpers.
+ *
+ * Note: This module is intentionally generic and does not assume it runs inside the OpenClaw
+ * gateway process. Callers should pass a deterministic memoryDir when running in a daemon/service.
  */
 
-import { getCoreMemories } from "./index";
+import { getCoreMemories, type CoreMemoriesInitOptions } from "./index";
 
 export interface SmartReminder {
   text: string;
@@ -38,16 +40,11 @@ export interface MaintenanceResult {
   totalTokens: number;
 }
 
-/**
- * HEARTBEAT Integration
- * Called every 6 hours to maintain CoreMemories
- */
-export async function heartbeatMaintenance(): Promise<MaintenanceResult> {
-  console.log("💓 HEARTBEAT: Running CoreMemories maintenance...");
+export async function heartbeatMaintenance(
+  opts: CoreMemoriesInitOptions = {},
+): Promise<MaintenanceResult> {
+  const cm = await getCoreMemories(opts);
 
-  const cm = await getCoreMemories();
-
-  // 1. Run compression (Flash → Warm)
   const flashBefore = cm.getFlashEntries().length;
   const warmBefore = cm.getWarmEntries().length;
 
@@ -57,16 +54,8 @@ export async function heartbeatMaintenance(): Promise<MaintenanceResult> {
   const warmAfter = cm.getWarmEntries().length;
   const compressed = warmAfter > warmBefore || flashAfter < flashBefore;
 
-  // 2. Get pending MEMORY.md proposals
   const pending = cm.getPendingMemoryMdProposals();
-  if (pending.length > 0) {
-    console.log(`   💡 ${pending.length} MEMORY.md updates pending approval`);
-    // In real implementation, this would notify user
-  }
-
-  // 3. Log status
   const context = cm.loadSessionContext();
-  console.log(`   📊 Status: ${context.flash.length} flash, ${context.warm.length} warm entries`);
 
   return {
     compressed,
@@ -75,17 +64,14 @@ export async function heartbeatMaintenance(): Promise<MaintenanceResult> {
   };
 }
 
-/**
- * CRON Integration
- * Creates a reminder with CoreMemories context
- */
-export async function createSmartReminder(params: SmartReminderParams): Promise<SmartReminder> {
+export async function createSmartReminder(
+  params: SmartReminderParams,
+  opts: CoreMemoriesInitOptions = {},
+): Promise<SmartReminder> {
   const { text, scheduledTime, keywords = [] } = params;
 
-  console.log(`⏰ CRON: Creating smart reminder for ${scheduledTime}`);
+  const cm = await getCoreMemories(opts);
 
-  // Query CoreMemories for context
-  const cm = await getCoreMemories();
   const contextEntries: Array<{
     id: string;
     content?: string;
@@ -93,16 +79,13 @@ export async function createSmartReminder(params: SmartReminderParams): Promise<
     hook?: string;
   }> = [];
 
-  // Search by keywords (support sync or async implementations)
   for (const keyword of keywords) {
     const results = await Promise.resolve(cm.findByKeyword(keyword));
     contextEntries.push(...results.flash, ...results.warm);
   }
 
-  // Deduplicate
   const uniqueEntries = [...new Map(contextEntries.map((e) => [e.id, e])).values()];
 
-  // Build context summary
   const context = uniqueEntries
     .slice(0, 3)
     .map((e) => {
@@ -119,60 +102,44 @@ export async function createSmartReminder(params: SmartReminderParams): Promise<
     })
     .filter(Boolean);
 
-  const reminderWithContext: SmartReminder = {
+  return {
     text,
     scheduledTime,
     keywords,
     context: context.length > 0 ? context : null,
     createdAt: new Date().toISOString(),
   };
-
-  console.log(`   📝 Reminder created with ${context.length} context entries`);
-
-  return reminderWithContext;
 }
 
-/**
- * Execute a reminder with CoreMemories context
- * Called by CRON when reminder fires
- */
 export async function executeSmartReminder(reminder: SmartReminder): Promise<string> {
-  console.log("🔔 Executing smart reminder...");
+  let message = `Reminder: ${reminder.text}`;
 
-  let message = `⏰ Reminder: ${reminder.text}`;
-
-  // Add context if available
   if (reminder.context && reminder.context.length > 0) {
-    message += "\n\n📋 Context:";
+    message += "\n\nContext:";
     reminder.context.forEach((ctx, i) => {
       message += `\n  ${i + 1}. ${ctx}...`;
     });
   }
 
-  // Add related keywords for further lookup
   if (reminder.keywords && reminder.keywords.length > 0) {
-    message += `\n\n🔍 Related: ${reminder.keywords.join(", ")}`;
+    message += `\n\nRelated: ${reminder.keywords.join(", ")}`;
   }
 
-  console.log(message);
   return message;
 }
 
-/**
- * Store a task with CoreMemories
- * Links the task to relevant memories
- */
-export async function storeTaskWithContext(task: string): Promise<TaskEntry> {
-  const cm = await getCoreMemories();
+export async function storeTaskWithContext(
+  task: string,
+  opts: CoreMemoriesInitOptions = {},
+): Promise<TaskEntry> {
+  const cm = await getCoreMemories(opts);
 
-  // Extract keywords from task
   const keywords = task
     .toLowerCase()
     .replace(/[^a-z0-9\s]/g, " ")
     .split(/\s+/)
     .filter((w) => w.length > 4);
 
-  // Find related memories
   const relatedMemories: Array<{ keyword: string; flash: number; warm: number }> = [];
   for (const keyword of keywords.slice(0, 3)) {
     const results = await Promise.resolve(cm.findByKeyword(keyword));
@@ -194,43 +161,7 @@ export async function storeTaskWithContext(task: string): Promise<TaskEntry> {
     createdAt: new Date().toISOString(),
   };
 
-  // Store in CoreMemories
   cm.addFlashEntry(`Task created: ${task}`, "user", "action");
 
-  console.log(`✅ Task stored with ${relatedMemories.length} related memory links`);
-
   return taskEntry;
-}
-
-/**
- * Complete workflow example
- */
-export async function exampleWorkflow(): Promise<void> {
-  console.log("\n🔄 Example: Complete Workflow\n");
-
-  // 1. User creates a reminder
-  console.log('1. User: "Remind me to check Groq in 2 hours"');
-  const reminder = await createSmartReminder({
-    text: "Check Groq console status",
-    scheduledTime: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-    keywords: ["groq", "voice", "console"],
-  });
-
-  // 2. Store the task
-  console.log("\n2. Storing task with context...");
-  await storeTaskWithContext("Check Groq console for voice system");
-
-  // 3. HEARTBEAT runs (every 6h)
-  console.log("\n3. HEARTBEAT running maintenance...");
-  await heartbeatMaintenance();
-
-  // 4. CRON fires reminder
-  console.log("\n4. CRON firing reminder...");
-  const reminderMessage = await executeSmartReminder(reminder);
-
-  console.log("\n✅ Workflow complete!");
-  console.log("\nReminder message that would be sent:");
-  console.log("─".repeat(50));
-  console.log(reminderMessage);
-  console.log("─".repeat(50));
 }

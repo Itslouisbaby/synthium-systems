@@ -56,6 +56,13 @@ const DEFAULT_CONFIG: CoreMemoriesConfig = {
     defaultLevel: "public",
     encryptSecrets: true,
   },
+
+  limits: {
+    // Flash is described as "0–48h"; this cap prevents runaway growth while still being useful.
+    maxFlashEntries: 250,
+    // Warm layer is stored per-week file.
+    maxWarmEntriesPerWeek: 200,
+  },
 };
 
 let CONFIG: CoreMemoriesConfig | null = null;
@@ -97,6 +104,10 @@ export interface CoreMemoriesConfig {
   privacy: {
     defaultLevel: string;
     encryptSecrets: boolean;
+  };
+  limits: {
+    maxFlashEntries: number;
+    maxWarmEntriesPerWeek: number;
   };
 }
 
@@ -171,6 +182,23 @@ function ensureDir(dirPath: string): void {
   if (!fs.existsSync(dirPath)) {
     fs.mkdirSync(dirPath, { recursive: true });
   }
+}
+
+function writeFileAtomicSync(filePath: string, content: string): void {
+  ensureDir(path.dirname(filePath));
+  const tmpPath = `${filePath}.tmp.${process.pid}.${Date.now()}`;
+  fs.writeFileSync(tmpPath, content);
+  // Windows rename won't always overwrite; remove first.
+  try {
+    fs.rmSync(filePath, { force: true });
+  } catch {
+    // ignore
+  }
+  fs.renameSync(tmpPath, filePath);
+}
+
+function writeJsonAtomicSync(filePath: string, value: unknown): void {
+  writeFileAtomicSync(filePath, JSON.stringify(value, null, 2));
 }
 
 function generateId(): string {
@@ -367,7 +395,6 @@ export async function initializeConfig(): Promise<CoreMemoriesConfig> {
   // Deep merge instead of shallow spread
   CONFIG = deepMerge(JSON.parse(JSON.stringify(DEFAULT_CONFIG)) as CoreMemoriesConfig, userConfig);
 
-  console.log("🔍 CoreMemories: Detecting local LLM...");
   const ollamaCheck = await checkOllamaAvailable();
 
   if (ollamaCheck.available) {
@@ -381,15 +408,11 @@ export async function initializeConfig(): Promise<CoreMemoriesConfig> {
       CONFIG.engines.local.model = ollamaCheck.models[0].name;
     }
 
-    console.log(`   ✓ Ollama detected (${CONFIG.engines.local.model})`);
   } else {
-    console.log("   ⚠ Ollama not detected");
+    // No local LLM detected.
   }
 
-  if (CONFIG.engines.local.available) {
-    console.log("✓ CoreMemories active (LLM-enhanced compression)");
-  } else {
-    console.log("✓ CoreMemories active (rule-based compression)");
+  if (!CONFIG.engines.local.available) {
     // Only show tip if not shown recently (max once per 7 days)
     await maybeShowOllamaTip();
   }
@@ -566,7 +589,7 @@ Output only valid JSON:`;
       try {
         parsed = JSON.parse(response);
       } catch {
-        console.warn("CoreMemories: LLM returned invalid JSON, using fallback");
+        // LLM returned invalid JSON; fall back to rule-based compression.
         const fallback = new RuleBasedCompression();
         return fallback.compress(flashEntry);
       }
@@ -588,7 +611,7 @@ Output only valid JSON:`;
         type: flashEntry.type,
       };
     } catch (e) {
-      console.warn("CoreMemories: LLM compression failed, using fallback:", (e as Error).message);
+      // LLM compression failed; fall back to rule-based compression.
       const fallback = new RuleBasedCompression();
       return fallback.compress(flashEntry);
     }
@@ -717,14 +740,7 @@ class MemoryMdIntegration {
 
     this.pendingUpdates.push(proposal);
 
-    // Log to console (in real implementation, this would prompt user)
-    console.log("");
-    console.log("💡 MEMORY.md Update Suggested:");
-    console.log(`   "${proposal.essence}"`);
-    console.log(`   Section: ${proposal.section}`);
-    console.log(`   Reason: ${proposal.reason}`);
-    console.log(`   [Would prompt user: Add to MEMORY.md?]`);
-    console.log("");
+    // Note: Proposals are returned via the API; callers decide how to surface them (UI/tooling).
 
     return proposal;
   }
@@ -763,7 +779,7 @@ class MemoryMdIntegration {
     // Write updated version
     fs.writeFileSync(memoryMdPath, content);
 
-    console.log(`✓ MEMORY.md updated: ${proposal.essence.substring(0, 50)}...`);
+    // MEMORY.md updated (logging handled by caller).
     return true;
   }
 
@@ -860,7 +876,7 @@ export class CoreMemories {
   private saveIndex(index: IndexData): void {
     index.lastUpdated = getCurrentTimestamp();
     const indexPath = path.join(this.memoryDir, "index.json");
-    fs.writeFileSync(indexPath, JSON.stringify(index, null, 2));
+    writeJsonAtomicSync(indexPath, index);
   }
 
   private updateIndex(entry: FlashEntry | WarmEntry, location: string): void {
@@ -915,11 +931,16 @@ export class CoreMemories {
 
     flashData.entries.push(entry);
 
-    if (flashData.entries.length > 15) {
-      flashData.entries = flashData.entries.slice(-15);
+    const maxFlashEntries =
+      typeof CONFIG?.limits?.maxFlashEntries === "number" && CONFIG.limits.maxFlashEntries > 0
+        ? CONFIG.limits.maxFlashEntries
+        : 250;
+
+    if (flashData.entries.length > maxFlashEntries) {
+      flashData.entries = flashData.entries.slice(-maxFlashEntries);
     }
 
-    fs.writeFileSync(flashPath, JSON.stringify(flashData, null, 2));
+    writeJsonAtomicSync(flashPath, flashData);
     this.updateIndex(entry, "hot/flash/current.json");
 
     return entry;
@@ -972,7 +993,17 @@ export class CoreMemories {
       warmData.entries = warmData.entries.slice(-20);
     }
 
-    fs.writeFileSync(warmPath, JSON.stringify(warmData, null, 2));
+    const maxWarmEntries =
+      typeof CONFIG?.limits?.maxWarmEntriesPerWeek === "number" &&
+      CONFIG.limits.maxWarmEntriesPerWeek > 0
+        ? CONFIG.limits.maxWarmEntriesPerWeek
+        : 200;
+
+    if (warmData.entries.length > maxWarmEntries) {
+      warmData.entries = warmData.entries.slice(-maxWarmEntries);
+    }
+
+    writeJsonAtomicSync(warmPath, warmData);
     this.updateIndex(warmEntry, `hot/warm/week-${weekNumber}.json`);
 
     return warmEntry;
@@ -1102,7 +1133,7 @@ export class CoreMemories {
     }
 
     // Update flash file with only new entries (removes compressed ones)
-    fs.writeFileSync(flashPath, JSON.stringify({ entries: toKeep }, null, 2));
+    writeJsonAtomicSync(flashPath, { entries: toKeep });
 
     console.log(`   ✓ Compressed ${compressed} entries to Warm layer`);
     console.log(`   ✓ Removed compressed entries from Flash`);
@@ -1148,10 +1179,21 @@ export class CoreMemories {
 
 // Singleton
 let instance: CoreMemories | null = null;
+let instanceDir: string | null = null;
 
-export async function getCoreMemories(): Promise<CoreMemories> {
-  if (!instance) {
-    instance = new CoreMemories();
+export type CoreMemoriesInitOptions = {
+  /**
+   * Absolute (recommended) or relative directory to store CoreMemories data.
+   * When used inside OpenClaw, pass an agent/workspace-scoped path instead of relying on cwd.
+   */
+  memoryDir?: string;
+};
+
+export async function getCoreMemories(opts: CoreMemoriesInitOptions = {}): Promise<CoreMemories> {
+  const memoryDir = typeof opts.memoryDir === "string" && opts.memoryDir.trim() ? opts.memoryDir : undefined;
+  if (!instance || (memoryDir && instanceDir !== memoryDir)) {
+    instance = new CoreMemories(memoryDir ?? ".openclaw/memory");
+    instanceDir = memoryDir ?? ".openclaw/memory";
     await instance.initialize();
   }
   return instance;

@@ -69,9 +69,9 @@ describe("CoreMemories v2.1", () => {
         timestamp: new Date(Date.now() - 49 * 60 * 60 * 1000).toISOString(),
         type: "conversation",
         content:
-          "Remember this: The test recovery code is TEST1234EXAMPLE5678. This is test information.",
+          "Remember this: The test token is TEST1234EXAMPLE5678. This is test information.",
         speaker: "user",
-        keywords: ["recovery", "code", "test", "information"],
+        keywords: ["token", "test", "information"],
         emotionalSalience: 0.9,
         userFlagged: true,
         linkedTo: [],
