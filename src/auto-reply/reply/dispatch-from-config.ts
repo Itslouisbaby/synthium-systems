@@ -368,42 +368,43 @@ export async function dispatchReplyFromConfig(params: {
     let accumulatedBlockText = "";
     let blockCount = 0;
 
+    const shouldSendToolSummaries = ctx.ChatType !== "group" && ctx.CommandSource !== "native";
+
     const replyResult = await (params.replyResolver ?? getReplyFromConfig)(
       ctx,
       {
         ...params.replyOptions,
-        onToolResult:
-          ctx.ChatType !== "group" && ctx.CommandSource !== "native"
-            ? (payload: ReplyPayload) => {
-                const run = async () => {
-                  const ttsPayload = await maybeApplyTtsToPayload({
-                    payload,
-                    cfg,
-                    channel: ttsChannel,
-                    kind: "tool",
-                    inboundAudio,
-                    ttsAuto: sessionTtsAuto,
+        onToolResult: shouldSendToolSummaries
+          ? (payload: ReplyPayload) => {
+              const run = async () => {
+                const ttsPayload = await maybeApplyTtsToPayload({
+                  payload,
+                  cfg,
+                  channel: ttsChannel,
+                  kind: "tool",
+                  inboundAudio,
+                  ttsAuto: sessionTtsAuto,
+                });
+
+                // CoreMemories ingestion (best-effort): record assistant tool-result text.
+                if (ttsPayload.text) {
+                  void maybeRecordCoreMemoriesEntry({
+                    text: ttsPayload.text,
+                    speaker: "assistant",
+                    type: "assistant_reply",
+                    memoryDir: coreMemoriesDir,
                   });
+                }
 
-                  // CoreMemories ingestion (best-effort): record assistant tool-result text.
-                  if (ttsPayload.text) {
-                    void maybeRecordCoreMemoriesEntry({
-                      text: ttsPayload.text,
-                      speaker: "assistant",
-                      type: "assistant_reply",
-                      memoryDir: coreMemoriesDir,
-                    });
-                  }
-
-                  if (shouldRouteToOriginating) {
-                    await sendPayloadAsync(ttsPayload, undefined, false);
-                  } else {
-                    dispatcher.sendToolResult(ttsPayload);
-                  }
-                };
-                return run();
-              }
-            : undefined,
+                if (shouldRouteToOriginating) {
+                  await sendPayloadAsync(ttsPayload, undefined, false);
+                } else {
+                  dispatcher.sendToolResult(ttsPayload);
+                }
+              };
+              return run();
+            }
+          : undefined,
         onBlockReply: (payload: ReplyPayload, context) => {
           const run = async () => {
             // Accumulate block text for TTS generation after streaming
