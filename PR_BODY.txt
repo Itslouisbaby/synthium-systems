@@ -1,39 +1,75 @@
 ## Summary
 
-Adds **CoreMemories**: a local-first memory store for OpenClaw that captures recent chat into a lightweight “Flash” layer, supports optional compression into “Warm”, and provides fast keyword-based retrieval.
+Adds **CoreMemories**: a **local-first, file-backed** memory system for OpenClaw that captures recent chat into a lightweight **Flash** layer, optionally compresses into **Warm**, and supports **fast keyword retrieval**.
 
-This PR is designed to be **best-effort** (must never break message handling) and **portable** (no reliance on process cwd).
+Design goals:
+
+- **Best-effort**: must never break message handling or heartbeats (all CoreMemories work is wrapped and non-blocking).
+- **Deterministic paths**: no reliance on process cwd.
+- **Isolation**: storage is **per-sessionKey** to avoid cross-chat contamination.
 
 ## What’s included
 
 ### 1) New package: `packages/core-memories` (`@openclaw/core-memories`)
 
-- **Flash (hot)**: last ~48h of entries stored on disk
+- **Flash (hot)**: bounded, recent entries (default cap; safe/atomic JSON writes)
 - **Warm (hot)**: compressed entries (rule-based by default; optional Ollama-assisted compression)
-- **Per-session storage**: CoreMemories data is stored under a session-scoped directory (passed in via `memoryDir`) so different chats don’t contaminate each other.
-- **Per-session index**: `index.json` maintains a simple keyword → entryId map.
+- **Per-session keyword index**: simple keyword → entryId mapping for fast lookups
+- **Configurable limits**: caps to keep the store bounded (e.g. flash entry cap, warm cap)
 
 ### 2) Ingestion hook (best-effort)
 
-- `src/auto-reply/reply/dispatch-from-config.ts` records:
-  - inbound user text as `conversation`
-  - assistant outputs (tool/block/final/abort text) as `assistant_reply`
-- Ingestion uses a deterministic `memoryDir` derived from the agent workspace and sessionKey.
+`src/auto-reply/reply/dispatch-from-config.ts` records:
+
+- inbound user text as `conversation`
+- assistant outputs as `assistant_reply` (tool / block / final / abort)
+
+Key behavior:
+
+- Ingestion computes a deterministic session-scoped `memoryDir` derived from the **agent workspace** and **sessionKey**.
 - All ingestion is wrapped in try/catch and is non-blocking.
 
-### 3) Global keyword “links” index (cross-session)
+### 3) Per-session storage directory (sessionKey isolation)
 
-To avoid scanning many session folders when doing keyword lookup, this adds a **global links index**:
+CoreMemories is stored under:
 
-- **Write path:** append-only JSONL log
+- `<agentWorkspace>/.openclaw/memory/sessions/<sanitized-sessionKey>/...`
+
+### 4) Global keyword “links” index (cross-session)
+
+To avoid scanning many session folders for keyword lookup, this adds a global links index:
+
+- **Write path:** append-only JSONL
   - `<agentWorkspace>/.openclaw/memory/links/links.jsonl`
-- **Read path:** compacted index
+- **Read path:** compacted JSON index
   - `<agentWorkspace>/.openclaw/memory/links/index.json`
-- **Compaction:** periodic rebuild from JSONL to JSON (best-effort), keeping writes O(1) and reads fast.
+- **Meta:**
+  - `<agentWorkspace>/.openclaw/memory/links/meta.json`
+- **Compaction:** best-effort periodic rebuild from JSONL → JSON (keeps writes O(1), reads fast)
 
-### 4) Repo integration
+### 5) Heartbeat maintenance wiring (opt-in)
 
-- Root `package.json` includes `@openclaw/core-memories` as `workspace:*` so the gateway’s dynamic import can typecheck in CI.
+Adds optional heartbeat-triggered maintenance to keep the links index compact / maintenance best-effort:
+
+- `src/infra/heartbeat-runner.ts` calls `@openclaw/core-memories/integration.heartbeatMaintenance({ memoryDir })` **before** running the agent reply.
+- Config (opt-in):
+  - `agents.defaults.heartbeat.coreMemories.enabled?: boolean`
+  - `agents.defaults.heartbeat.coreMemories.every?: string` (default `"6h"`)
+- Rate-limit state file:
+  - `<agentWorkspace>/.openclaw/memory/coremem-maintenance.json`
+
+### 6) Monorepo / CI integration
+
+- Root `package.json` includes `@openclaw/core-memories: "workspace:*"`.
+- Adds a small TS shim (`src/types/core-memories-shim.d.ts`) so dynamic imports typecheck cleanly.
+- `packages/core-memories` builds its `dist/` on install (postinstall) so Vitest/Vite can resolve exports in CI workspaces.
+
+### 7) Test portability fixes (CI hardening)
+
+A couple of repo tests were adjusted for portability:
+
+- `src/agents/bash-tools.exec.pty-fallback.test.ts`: avoid `printf` (not available in some Windows shells) by using a node-based command.
+- `src/docker-setup.test.ts`: skip bash-dependent tests on native Windows, and satisfy `eslint(curly)` by always using braces.
 
 ## Why
 
@@ -44,11 +80,11 @@ To avoid scanning many session folders when doing keyword lookup, this adds a **
   - safe persistence
   - isolation between sessions
 
-CoreMemories provides a pragmatic baseline with minimal risk: a keyword index and storage layout that can later be extended (semantic retrieval, UI, better compaction policies) without changing the ingestion contract.
+CoreMemories provides a pragmatic baseline (keyword index + deterministic storage layout) that can later be extended (semantic retrieval, UI/tools, improved compaction) without changing the ingestion contract.
 
 ## Storage layout
 
-When `memoryDir` points at a session directory:
+Per-session (when `memoryDir` points at a session directory):
 
 - `.../memory/sessions/<session>/hot/flash/current.json`
 - `.../memory/sessions/<session>/hot/warm/week-*.json`
@@ -65,13 +101,11 @@ Global links:
 - `pnpm -C packages/core-memories lint`
 - `pnpm -C packages/core-memories test`
 - `pnpm -w check` (tsgo + lint + format)
+- `pnpm -w test`
 
 ## Notes / scope
 
-- Ollama use is optional and best-effort; the system falls back to rule-based compression.
-- This PR intentionally focuses on:
-  - safe ingestion
-  - deterministic storage paths
-  - keyword routing (including cross-session via global links)
+- All CoreMemories features are best-effort by design (failures should not block replies/heartbeats).
+- Ollama usage is optional and best-effort; the system falls back to rule-based compression.
 
 Follow-ups (not required for merge): richer retrieval UX/tools, semantic retrieval, improved compaction scheduling/config.
