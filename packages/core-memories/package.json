@@ -35,11 +35,11 @@
   },
   "scripts": {
     "build": "tsc && node ./scripts/rewrite-dist-imports.mjs",
-    "postinstall": "pnpm -s build",
     "format": "oxfmt --check",
     "format:fix": "oxfmt --write",
     "lint": "oxlint --type-aware --tsconfig tsconfig.json",
     "lint:fix": "oxlint --type-aware --tsconfig tsconfig.json --fix",
+    "postinstall": "pnpm -s build",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
