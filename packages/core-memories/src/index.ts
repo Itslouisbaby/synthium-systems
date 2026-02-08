@@ -212,17 +212,109 @@ function ensureDir(dirPath: string): void {
   }
 }
 
-function writeFileAtomicSync(filePath: string, content: string): void {
-  ensureDir(path.dirname(filePath));
-  const tmpPath = `${filePath}.tmp.${process.pid}.${Date.now()}`;
-  fs.writeFileSync(tmpPath, content);
-  // Windows rename won't always overwrite; remove first.
-  try {
-    fs.rmSync(filePath, { force: true });
-  } catch {
-    // ignore
+function resolveOpenClawDirFromMemoryDir(memoryDir?: string): string | null {
+  if (!memoryDir) {
+    return null;
   }
-  fs.renameSync(tmpPath, filePath);
+  const normalized = path.resolve(memoryDir).replace(/\\/g, "/");
+  const marker = "/.openclaw/";
+  const idx = normalized.toLowerCase().lastIndexOf(marker);
+  if (idx === -1) {
+    return null;
+  }
+  return normalized.slice(0, idx + marker.length - 1).replace(/\//g, path.sep);
+}
+
+function resolveWorkspaceDirFromMemoryDir(memoryDir?: string): string | null {
+  const openclawDir = resolveOpenClawDirFromMemoryDir(memoryDir);
+  if (!openclawDir) {
+    return null;
+  }
+  return path.dirname(openclawDir);
+}
+
+function resolveCoreMemoriesConfigPath(memoryDir?: string): string {
+  const openclawDir = resolveOpenClawDirFromMemoryDir(memoryDir);
+  if (openclawDir) {
+    return path.join(openclawDir, "core-memories-config.json");
+  }
+  if (memoryDir) {
+    return path.join(path.resolve(memoryDir, ".."), "core-memories-config.json");
+  }
+  return path.join(".openclaw", "core-memories-config.json");
+}
+
+function resolveTipStatePath(memoryDir?: string): string {
+  const openclawDir = resolveOpenClawDirFromMemoryDir(memoryDir);
+  if (openclawDir) {
+    return path.join(openclawDir, "memory", ".tip-state.json");
+  }
+  if (memoryDir) {
+    return path.join(path.resolve(memoryDir), ".tip-state.json");
+  }
+  return path.join(".openclaw", "memory", ".tip-state.json");
+}
+
+function sleepSync(ms: number): void {
+  if (ms <= 0) {
+    return;
+  }
+  const sab = new SharedArrayBuffer(4);
+  const ia = new Int32Array(sab);
+  Atomics.wait(ia, 0, 0, ms);
+}
+
+function withFileLockSync(filePath: string, fn: () => void): void {
+  const lockPath = `${filePath}.lock`;
+  const start = Date.now();
+  const maxWaitMs = 500;
+
+  while (true) {
+    try {
+      const fd = fs.openSync(lockPath, "wx");
+      try {
+        fn();
+      } finally {
+        try {
+          fs.closeSync(fd);
+        } catch {
+          // ignore
+        }
+        try {
+          fs.rmSync(lockPath, { force: true });
+        } catch {
+          // ignore
+        }
+      }
+      return;
+    } catch (err) {
+      const code = (err as NodeJS.ErrnoException).code;
+      if (code !== "EEXIST") {
+        throw err;
+      }
+      if (Date.now() - start > maxWaitMs) {
+        console.warn(`CoreMemories: lock timeout for ${filePath}`);
+        fn();
+        return;
+      }
+      sleepSync(25);
+    }
+  }
+}
+
+function writeFileAtomicSync(filePath: string, content: string): void {
+  withFileLockSync(filePath, () => {
+    ensureDir(path.dirname(filePath));
+    const tmpPath = `${filePath}.tmp.${process.pid}.${Date.now()}`;
+    fs.writeFileSync(tmpPath, content);
+    // Windows rename won't always overwrite; remove first.
+    try {
+      fs.rmSync(filePath, { force: true });
+    } catch {
+      // ignore
+    }
+    fs.renameSync(tmpPath, filePath);
+  });
 }
 
 function writeJsonAtomicSync(filePath: string, value: unknown): void {
@@ -230,8 +322,10 @@ function writeJsonAtomicSync(filePath: string, value: unknown): void {
 }
 
 function appendJsonlSync(filePath: string, value: unknown): void {
-  ensureDir(path.dirname(filePath));
-  fs.appendFileSync(filePath, `${JSON.stringify(value)}\n`, "utf-8");
+  withFileLockSync(filePath, () => {
+    ensureDir(path.dirname(filePath));
+    fs.appendFileSync(filePath, `${JSON.stringify(value)}\n`, "utf-8");
+  });
 }
 
 function generateId(): string {
@@ -325,7 +419,17 @@ export async function checkOllamaAvailable(endpoint?: string): Promise<OllamaChe
     const base = endpoint ?? CONFIG?.engines?.local?.endpoint ?? "http://localhost:11434";
     const url = `${base.replace(/\/$/, "")}/api/tags`;
 
-    const req = http.get(url, (res: http.IncomingMessage) => {
+    let client: typeof http | typeof https = http;
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol === "https:") {
+        client = https;
+      }
+    } catch {
+      // Fall back to http if URL parsing fails.
+    }
+
+    const req = client.get(url, (res: http.IncomingMessage) => {
       // Always drain the response to avoid socket leaks on repeated probes.
       if (res.statusCode !== 200) {
         res.resume();
@@ -359,6 +463,35 @@ export async function checkOllamaAvailable(endpoint?: string): Promise<OllamaChe
   });
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value));
+}
+
+function mergeKnownKeys(
+  target: Record<string, unknown>,
+  source: Record<string, unknown>,
+  prefix: string,
+): Record<string, unknown> {
+  const result = { ...target };
+  for (const key in source) {
+    if (!(key in target)) {
+      console.warn(`CoreMemories: Ignoring unknown nested config key "${prefix}.${key}"`);
+      continue;
+    }
+
+    const sourceValue = source[key];
+    const targetValue = target[key];
+
+    if (isPlainObject(sourceValue) && isPlainObject(targetValue)) {
+      result[key] = mergeKnownKeys(targetValue, sourceValue, `${prefix}.${key}`);
+    } else if (typeof sourceValue !== "function") {
+      result[key] = sourceValue as unknown;
+    }
+  }
+
+  return result;
+}
+
 // Type-safe deep merge that only merges known config keys
 function deepMerge(
   target: CoreMemoriesConfig,
@@ -374,32 +507,15 @@ function deepMerge(
     }
 
     const sourceValue = source[key];
+    const targetValue = result[key as keyof CoreMemoriesConfig];
 
-    // Handle nested objects (but not arrays or null)
-    if (
-      sourceValue &&
-      typeof sourceValue === "object" &&
-      !Array.isArray(sourceValue) &&
-      key in result &&
-      result[key as keyof CoreMemoriesConfig] &&
-      typeof result[key as keyof CoreMemoriesConfig] === "object"
-    ) {
-      // Recursively merge nested objects
-      const targetValue = result[key as keyof CoreMemoriesConfig] as Record<string, unknown>;
-      const mergedNested = { ...targetValue };
-
-      for (const nestedKey in sourceValue) {
-        // Only merge keys that exist in the target nested object
-        if (nestedKey in targetValue) {
-          mergedNested[nestedKey] = (sourceValue as Record<string, unknown>)[nestedKey];
-        } else {
-          console.warn(`CoreMemories: Ignoring unknown nested config key "${key}.${nestedKey}"`);
-        }
-      }
-
-      (result[key as keyof CoreMemoriesConfig] as unknown) = mergedNested;
+    if (isPlainObject(sourceValue) && isPlainObject(targetValue)) {
+      (result[key as keyof CoreMemoriesConfig] as unknown) = mergeKnownKeys(
+        targetValue as Record<string, unknown>,
+        sourceValue as Record<string, unknown>,
+        key,
+      );
     } else if (typeof sourceValue !== "function") {
-      // Primitive value - assign directly
       (result[key as keyof CoreMemoriesConfig] as unknown) = sourceValue;
     }
   }
@@ -408,12 +524,12 @@ function deepMerge(
 }
 
 // Initialize configuration with auto-detection
-export async function initializeConfig(): Promise<CoreMemoriesConfig> {
+export async function initializeConfig(options?: { memoryDir?: string }): Promise<CoreMemoriesConfig> {
   if (CONFIG) {
     return CONFIG;
   }
 
-  const configPath = path.join(".openclaw", "core-memories-config.json");
+  const configPath = resolveCoreMemoriesConfigPath(options?.memoryDir);
   let userConfig: Record<string, unknown> = {};
 
   if (fs.existsSync(configPath)) {
@@ -446,7 +562,7 @@ export async function initializeConfig(): Promise<CoreMemoriesConfig> {
 
   if (!CONFIG.engines.local.available) {
     // Only show tip if not shown recently (max once per 7 days)
-    await maybeShowOllamaTip();
+    await maybeShowOllamaTip(options?.memoryDir);
   }
 
   return CONFIG;
@@ -461,8 +577,8 @@ interface TipState {
 const TIP_COOLDOWN_DAYS = 7;
 const MAX_TIP_COUNT = 3;
 
-async function maybeShowOllamaTip(): Promise<void> {
-  const tipPath = path.join(".openclaw", "memory", ".tip-state.json");
+async function maybeShowOllamaTip(memoryDir?: string): Promise<void> {
+  const tipPath = resolveTipStatePath(memoryDir);
 
   let tipState: TipState = { lastOllamaTipShown: "", tipCount: 0 };
 
@@ -675,9 +791,11 @@ class AutoCompression {
 // MEMORY.md Integration
 class MemoryMdIntegration {
   private pendingUpdates: MemoryMdProposal[];
+  private memoryDir?: string;
 
-  constructor() {
+  constructor(memoryDir?: string) {
     this.pendingUpdates = [];
+    this.memoryDir = memoryDir;
   }
 
   // Check if entry qualifies for MEMORY.md
@@ -779,10 +897,13 @@ class MemoryMdIntegration {
 
   // Actually update MEMORY.md (called after user approval)
   async updateMemoryMd(proposal: MemoryMdProposal): Promise<boolean> {
-    const memoryMdPath = "MEMORY.md";
+    const workspaceDir = resolveWorkspaceDirFromMemoryDir(this.memoryDir);
+    const memoryMdPath = workspaceDir
+      ? path.join(workspaceDir, "MEMORY.md")
+      : path.resolve("MEMORY.md");
 
     if (!fs.existsSync(memoryMdPath)) {
-      console.warn("MEMORY.md not found, cannot update");
+      console.warn(`MEMORY.md not found at ${memoryMdPath}, cannot update`);
       return false;
     }
 
@@ -805,7 +926,10 @@ class MemoryMdIntegration {
     }
 
     // Backup old version
-    const backupPath = `MEMORY.md.backup.${Date.now()}`;
+    const backupPath = path.join(
+      path.dirname(memoryMdPath),
+      `MEMORY.md.backup.${Date.now()}`,
+    );
     fs.writeFileSync(backupPath, fs.readFileSync(memoryMdPath));
 
     // Write updated version
@@ -836,7 +960,7 @@ export class CoreMemories {
   constructor(memoryDir = ".openclaw/memory") {
     this.memoryDir = memoryDir;
     this.compressionEngine = new AutoCompression();
-    this.memoryMdIntegration = new MemoryMdIntegration();
+    this.memoryMdIntegration = new MemoryMdIntegration(this.memoryDir);
     this.initialized = false;
   }
 
@@ -845,7 +969,7 @@ export class CoreMemories {
       return;
     }
 
-    await initializeConfig();
+    await initializeConfig({ memoryDir: this.memoryDir });
 
     const dirs = [
       this.memoryDir,
@@ -1197,9 +1321,7 @@ export class CoreMemories {
 
     warmData.entries.push(warmEntry);
 
-    if (warmData.entries.length > 20) {
-      warmData.entries = warmData.entries.slice(-20);
-    }
+    // warm entries are capped below by config
 
     const maxWarmEntries =
       typeof CONFIG?.limits?.maxWarmEntriesPerWeek === "number" &&
@@ -1267,15 +1389,17 @@ export class CoreMemories {
     // Get all entries once for searching
     const flashEntries = this.getFlashEntries();
     const allWarmEntries = this.getAllWarmEntries();
+    const flashById = new Map(flashEntries.map((entry) => [entry.id, entry]));
+    const warmById = new Map(allWarmEntries.map((entry) => [entry.id, entry]));
 
     for (const id of ids) {
-      const flashMatch = flashEntries.find((e) => e.id === id);
+      const flashMatch = flashById.get(id);
       if (flashMatch) {
         flash.push(flashMatch);
         continue;
       }
 
-      const warmMatch = allWarmEntries.find((e) => e.id === id);
+      const warmMatch = warmById.get(id);
       if (warmMatch) {
         warm.push(warmMatch);
       }
