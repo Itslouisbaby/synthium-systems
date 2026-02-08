@@ -19,7 +19,7 @@ For model selection rules, see [/concepts/models](/concepts/models).
 
 ## Built-in providers (pi-ai catalog)
 
-OpenClaw ships with the pi‑ai catalog. These providers require **no**
+Synth AI ships with the pi‑ai catalog. These providers require **no**
 `models.providers` config; just set auth + pick a model.
 
 ### OpenAI
@@ -297,7 +297,7 @@ Example (OpenAI‑compatible):
 Notes:
 
 - For custom providers, `reasoning`, `input`, `cost`, `contextWindow`, and `maxTokens` are optional.
-  When omitted, OpenClaw defaults to:
+  When omitted, Synth AI defaults to:
   - `reasoning: false`
   - `input: ["text"]`
   - `cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }`

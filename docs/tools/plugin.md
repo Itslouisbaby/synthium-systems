@@ -1,5 +1,5 @@
 ---
-summary: "OpenClaw plugins/extensions: discovery, config, and safety"
+summary: "Synth AI plugins/extensions: discovery, config, and safety"
 read_when:
   - Adding or modifying plugins/extensions
   - Documenting plugin install or load rules
@@ -10,11 +10,11 @@ title: "Plugins"
 
 ## Quick start (new to plugins?)
 
-A plugin is just a **small code module** that extends OpenClaw with extra
+A plugin is just a **small code module** that extends Synth AI with extra
 features (commands, tools, and Gateway RPC).
 
 Most of the time, you’ll use plugins when you want a feature that’s not built
-into core OpenClaw yet (or you want to keep optional features out of your main
+into core Synth AI yet (or you want to keep optional features out of your main
 install).
 
 Fast path:
@@ -51,7 +51,7 @@ See [Voice Call](/plugins/voice-call) for a concrete example plugin.
 - Qwen OAuth (provider auth) — bundled as `qwen-portal-auth` (disabled by default)
 - Copilot Proxy (provider auth) — local VS Code Copilot Proxy bridge; distinct from built-in `github-copilot` device login (bundled, disabled by default)
 
-OpenClaw plugins are **TypeScript modules** loaded at runtime via jiti. **Config
+Synth AI plugins are **TypeScript modules** loaded at runtime via jiti. **Config
 validation does not execute plugin code**; it uses the plugin manifest and JSON
 Schema instead. See [Plugin manifest](/plugins/manifest).
 
@@ -75,7 +75,7 @@ Plugins can access selected core helpers via `api.runtime`. For telephony TTS:
 
 ```ts
 const result = await api.runtime.tts.textToSpeechTelephony({
-  text: "Hello from OpenClaw",
+  text: "Hello from Synth AI",
   cfg: api.config,
 });
 ```
@@ -88,7 +88,7 @@ Notes:
 
 ## Discovery & precedence
 
-OpenClaw scans, in order:
+Synth AI scans, in order:
 
 1. Config paths
 
@@ -104,7 +104,7 @@ OpenClaw scans, in order:
 - `~/.openclaw/extensions/*.ts`
 - `~/.openclaw/extensions/*/index.ts`
 
-4. Bundled extensions (shipped with OpenClaw, **disabled by default**)
+4. Bundled extensions (shipped with Synth AI, **disabled by default**)
 
 - `<openclaw>/extensions/*`
 
@@ -169,7 +169,7 @@ Example:
 }
 ```
 
-OpenClaw can also merge **external channel catalogs** (for example, an MPM
+Synth AI can also merge **external channel catalogs** (for example, an MPM
 registry export). Drop a JSON file at one of:
 
 - `~/.openclaw/mpm/plugins.json`
@@ -187,7 +187,7 @@ Default plugin ids:
 - Package packs: `package.json` `name`
 - Standalone file: file base name (`~/.../voice-call.ts` → `voice-call`)
 
-If a plugin exports `id`, OpenClaw uses it but warns when it doesn’t match the
+If a plugin exports `id`, Synth AI uses it but warns when it doesn’t match the
 configured id.
 
 ## Config
@@ -247,7 +247,7 @@ are disabled with diagnostics.
 
 The Control UI uses `config.schema` (JSON Schema + `uiHints`) to render better forms.
 
-OpenClaw augments `uiHints` at runtime based on discovered plugins:
+Synth AI augments `uiHints` at runtime based on discovered plugins:
 
 - Adds per-plugin labels for `plugins.entries.<id>` / `.enabled` / `.config`
 - Merges optional plugin-provided config field hints under:
@@ -330,7 +330,7 @@ Notes:
 ## Provider plugins (model auth)
 
 Plugins can register **model provider auth** flows so users can run OAuth or
-API-key setup inside OpenClaw (no external scripts needed).
+API-key setup inside Synth AI (no external scripts needed).
 
 Register a provider via `api.registerProvider(...)`. Each provider exposes one
 or more auth methods (OAuth, API key, device code, etc.). These methods power:
@@ -561,7 +561,7 @@ Command handler context:
 - `isAuthorizedSender`: Whether the sender is an authorized user
 - `args`: Arguments passed after the command (if `acceptsArgs: true`)
 - `commandBody`: The full command text
-- `config`: The current OpenClaw config
+- `config`: The current Synth AI config
 
 Command options:
 

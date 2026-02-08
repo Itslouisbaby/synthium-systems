@@ -1,7 +1,7 @@
 ---
-summary: "Use Anthropic Claude via API keys or setup-token in OpenClaw"
+summary: "Use Anthropic Claude via API keys or setup-token in Synth AI"
 read_when:
-  - You want to use Anthropic models in OpenClaw
+  - You want to use Anthropic models in Synth AI
   - You want setup-token instead of API keys
 title: "Anthropic"
 ---
@@ -9,7 +9,7 @@ title: "Anthropic"
 # Anthropic (Claude)
 
 Anthropic builds the **Claude** model family and provides access via an API.
-In OpenClaw you can authenticate with an API key or a **setup-token**.
+In Synth AI you can authenticate with an API key or a **setup-token**.
 
 ## Option A: Anthropic API key
 
@@ -37,7 +37,7 @@ openclaw onboard --anthropic-api-key "$ANTHROPIC_API_KEY"
 
 ## Prompt caching (Anthropic API)
 
-OpenClaw supports Anthropic's prompt caching feature. This is **API-only**; subscription auth does not honor cache settings.
+Synth AI supports Anthropic's prompt caching feature. This is **API-only**; subscription auth does not honor cache settings.
 
 ### Configuration
 
@@ -65,7 +65,7 @@ Use the `cacheRetention` parameter in your model config:
 
 ### Defaults
 
-When using Anthropic API Key authentication, OpenClaw automatically applies `cacheRetention: "short"` (5-minute cache) for all Anthropic models. You can override this by explicitly setting `cacheRetention` in your config.
+When using Anthropic API Key authentication, Synth AI automatically applies `cacheRetention: "short"` (5-minute cache) for all Anthropic models. You can override this by explicitly setting `cacheRetention` in your config.
 
 ### Legacy parameter
 
@@ -76,7 +76,7 @@ The older `cacheControlTtl` parameter is still supported for backwards compatibi
 
 We recommend migrating to the new `cacheRetention` parameter.
 
-OpenClaw includes the `extended-cache-ttl-2025-04-11` beta flag for Anthropic API
+Synth AI includes the `extended-cache-ttl-2025-04-11` beta flag for Anthropic API
 requests; keep it if you override provider headers (see [/gateway/configuration](/gateway/configuration)).
 
 ## Option B: Claude setup-token
@@ -91,7 +91,7 @@ Setup-tokens are created by the **Claude Code CLI**, not the Anthropic Console. 
 claude setup-token
 ```
 
-Paste the token into OpenClaw (wizard: **Anthropic token (paste setup-token)**), or run it on the gateway host:
+Paste the token into Synth AI (wizard: **Anthropic token (paste setup-token)**), or run it on the gateway host:
 
 ```bash
 openclaw models auth setup-token --provider anthropic

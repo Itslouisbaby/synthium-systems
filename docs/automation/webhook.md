@@ -2,7 +2,7 @@
 summary: "Webhook ingress for wake and isolated agent runs"
 read_when:
   - Adding or changing webhook endpoints
-  - Wiring external systems into OpenClaw
+  - Wiring external systems into Synth AI
 title: "Webhooks"
 ---
 

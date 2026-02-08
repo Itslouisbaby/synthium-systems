@@ -51,7 +51,7 @@ openclaw agents set-identity --workspace ~/.openclaw/workspace --from-identity
 Override fields explicitly:
 
 ```bash
-openclaw agents set-identity --agent main --name "OpenClaw" --emoji "🦞" --avatar avatars/openclaw.png
+openclaw agents set-identity --agent main --name "Synth AI" --emoji "🦞" --avatar avatars/openclaw.png
 ```
 
 Config sample:
@@ -63,7 +63,7 @@ Config sample:
       {
         id: "main",
         identity: {
-          name: "OpenClaw",
+          name: "Synth AI",
           theme: "space lobster",
           emoji: "🦞",
           avatar: "avatars/openclaw.png",

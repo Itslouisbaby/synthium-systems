@@ -29,7 +29,7 @@ It flags common footguns (Gateway auth exposure, browser control exposure, eleva
 
 Running an AI agent with shell access on your machine is... _spicy_. Here’s how to not get pwned.
 
-OpenClaw is both a product and an experiment: you’re wiring frontier-model behavior into real messaging surfaces and real tools. **There is no “perfectly secure” setup.** The goal is to be deliberate about:
+Synth AI is both a product and an experiment: you’re wiring frontier-model behavior into real messaging surfaces and real tools. **There is no “perfectly secure” setup.** The goal is to be deliberate about:
 
 - who can talk to your bot
 - where the bot is allowed to act
@@ -47,7 +47,7 @@ Start with the smallest access that still works, then widen it as you gain confi
 - **Plugins** (extensions exist without an explicit allowlist).
 - **Model hygiene** (warn when configured models look legacy; not a hard block).
 
-If you run `--deep`, OpenClaw also attempts a best-effort live Gateway probe.
+If you run `--deep`, Synth AI also attempts a best-effort live Gateway probe.
 
 ## Credential storage map
 
@@ -104,7 +104,7 @@ When `trustedProxies` is configured, the Gateway will use `X-Forwarded-For` head
 
 ## Local session logs live on disk
 
-OpenClaw stores session transcripts on disk under `~/.openclaw/agents/<agentId>/sessions/*.jsonl`.
+Synth AI stores session transcripts on disk under `~/.openclaw/agents/<agentId>/sessions/*.jsonl`.
 This is required for session continuity and (optionally) session memory indexing, but it also means
 **any process/user with filesystem access can read those logs**. Treat disk access as the trust
 boundary and lock down permissions on `~/.openclaw` (see the audit section below). If you need
@@ -120,7 +120,7 @@ If a macOS node is paired, the Gateway can invoke `system.run` on that node. Thi
 
 ## Dynamic skills (watcher / remote nodes)
 
-OpenClaw can refresh the skills list mid-session:
+Synth AI can refresh the skills list mid-session:
 
 - **Skills watcher**: changes to `SKILL.md` can update the skills snapshot on the next agent turn.
 - **Remote nodes**: connecting a macOS node can make macOS-only skills eligible (based on bin probing).
@@ -146,7 +146,7 @@ People who message you can:
 
 Most failures here are not fancy exploits — they’re “someone messaged the bot and the bot did what they asked.”
 
-OpenClaw’s stance:
+Synth AI’s stance:
 
 - **Identity first:** decide who can talk to the bot (DM pairing / allowlists / explicit “open”).
 - **Scope next:** decide where the bot is allowed to act (group allowlists + mention gating, tools, sandboxing, device permissions).
@@ -172,7 +172,7 @@ Plugins run **in-process** with the Gateway. Treat them as trusted code:
 - Restart the Gateway after plugin changes.
 - If you install plugins from npm (`openclaw plugins install <npm-spec>`), treat it like running untrusted code:
   - The install path is `~/.openclaw/extensions/<pluginId>/` (or `$OPENCLAW_STATE_DIR/extensions/<pluginId>/`).
-  - OpenClaw uses `npm pack` and then runs `npm install --omit=dev` in that directory (npm lifecycle scripts can execute code during install).
+  - Synth AI uses `npm pack` and then runs `npm install --omit=dev` in that directory (npm lifecycle scripts can execute code during install).
   - Prefer pinned, exact versions (`@scope/pkg@1.2.3`), and inspect the unpacked code on disk before enabling.
 
 Details: [Plugins](/tools/plugin)
@@ -197,7 +197,7 @@ Details + files on disk: [Pairing](/channels/pairing)
 
 ## DM session isolation (multi-user mode)
 
-By default, OpenClaw routes **all DMs into the main session** so your assistant has continuity across devices and channels. If **multiple people** can DM the bot (open DMs or a multi-person allowlist), consider isolating DM sessions:
+By default, Synth AI routes **all DMs into the main session** so your assistant has continuity across devices and channels. If **multiple people** can DM the bot (open DMs or a multi-person allowlist), consider isolating DM sessions:
 
 ```json5
 {
@@ -218,7 +218,7 @@ If you run multiple accounts on the same channel, use `per-account-channel-peer`
 
 ## Allowlists (DM + groups) — terminology
 
-OpenClaw has two separate “who can trigger me?” layers:
+Synth AI has two separate “who can trigger me?” layers:
 
 - **DM allowlist** (`allowFrom` / `channels.discord.dm.allowFrom` / `channels.slack.dm.allowFrom`): who is allowed to talk to the bot in direct messages.
   - When `dmPolicy="pairing"`, approvals are written to `~/.openclaw/credentials/<channel>-allowFrom.json` (merged with config allowlists).
@@ -445,9 +445,9 @@ Rotation checklist (token/password):
 
 ### 0.6) Tailscale Serve identity headers
 
-When `gateway.auth.allowTailscale` is `true` (default for Serve), OpenClaw
+When `gateway.auth.allowTailscale` is `true` (default for Serve), Synth AI
 accepts Tailscale Serve identity headers (`tailscale-user-login`) as
-authentication. OpenClaw verifies the identity by resolving the
+authentication. Synth AI verifies the identity by resolving the
 `x-forwarded-for` address through the local Tailscale daemon (`tailscale whois`)
 and matching it to the header. This only triggers for requests that hit loopback
 and include `x-forwarded-for`, `x-forwarded-proto`, and `x-forwarded-host` as
@@ -460,7 +460,7 @@ you terminate TLS or proxy in front of the gateway, disable
 Trusted proxies:
 
 - If you terminate TLS in front of the Gateway, set `gateway.trustedProxies` to your proxy IPs.
-- OpenClaw will trust `x-forwarded-for` (or `x-real-ip`) from those IPs to determine the client IP for local pairing checks and HTTP auth/local checks.
+- Synth AI will trust `x-forwarded-for` (or `x-real-ip`) from those IPs to determine the client IP for local pairing checks and HTTP auth/local checks.
 - Ensure your proxy **overwrites** `x-forwarded-for` and blocks direct access to the Gateway port.
 
 See [Tailscale](/gateway/tailscale) and [Web overview](/web).
@@ -619,7 +619,7 @@ access those accounts and data. Treat browser profiles as **sensitive state**:
 - Disable browser sync/password managers in the agent profile if possible (reduces blast radius).
 - For remote gateways, assume “browser control” is equivalent to “operator access” to whatever that profile can reach.
 - Keep the Gateway and node hosts tailnet-only; avoid exposing relay/control ports to LAN or public Internet.
-- The Chrome extension relay’s CDP endpoint is auth-gated; only OpenClaw clients can connect.
+- The Chrome extension relay’s CDP endpoint is auth-gated; only Synth AI clients can connect.
 - Disable browser proxy routing when you don’t need it (`gateway.nodes.browser.mode="off"`).
 - Chrome extension relay mode is **not** “safer”; it can take over your existing Chrome tabs. Assume it can act as you in whatever that tab/profile can reach.
 
@@ -760,7 +760,7 @@ If your AI does something bad:
 
 ### Collect for a report
 
-- Timestamp, gateway host OS + OpenClaw version
+- Timestamp, gateway host OS + Synth AI version
 - The session transcript(s) + a short log tail (after redacting)
 - What the attacker sent + what the agent did
 - Whether the Gateway was exposed beyond loopback (LAN/Tailscale Funnel/Serve)
@@ -816,7 +816,7 @@ Mario asking for find ~
 
 ## Reporting Security Issues
 
-Found a vulnerability in OpenClaw? Please report responsibly:
+Found a vulnerability in Synth AI? Please report responsibly:
 
 1. Email: [security@openclaw.ai](mailto:security@openclaw.ai)
 2. Don't post publicly until fixed

@@ -67,7 +67,7 @@ Service names are profile-aware:
 
 - macOS: `bot.molt.<profile>` (legacy `com.openclaw.*` may still exist)
 - Linux: `openclaw-gateway-<profile>.service`
-- Windows: `OpenClaw Gateway (<profile>)`
+- Windows: `Synth AI Gateway (<profile>)`
 
 Install metadata is embedded in the service config:
 
@@ -232,14 +232,14 @@ Notes:
 - `gateway status` prints config path + probe target to avoid “localhost vs LAN bind” confusion and profile mismatches.
 - `gateway status` includes the last gateway error line when the service looks running but the port is closed.
 - `logs` tails the Gateway file log via RPC (no manual `tail`/`grep` needed).
-- If other gateway-like services are detected, the CLI warns unless they are OpenClaw profile services.
+- If other gateway-like services are detected, the CLI warns unless they are Synth AI profile services.
   We still recommend **one gateway per machine** for most setups; use isolated profiles/ports for redundancy or a rescue bot. See [Multiple gateways](/gateway/multiple-gateways).
   - Cleanup: `openclaw gateway uninstall` (current service) and `openclaw doctor` (legacy migrations).
 - `gateway install` is a no-op when already installed; use `openclaw gateway install --force` to reinstall (profile/env/path changes).
 
 Bundled mac app:
 
-- OpenClaw.app can bundle a Node-based gateway relay and install a per-user LaunchAgent labeled
+- Synth AI.app can bundle a Node-based gateway relay and install a per-user LaunchAgent labeled
   `bot.molt.gateway` (or `bot.molt.<profile>`; legacy `com.openclaw.*` labels still unload cleanly).
 - To stop it cleanly, use `openclaw gateway stop` (or `launchctl bootout gui/$UID/bot.molt.gateway`).
 - To restart, use `openclaw gateway restart` (or `launchctl kickstart -k gui/$UID/bot.molt.gateway`).
@@ -248,7 +248,7 @@ Bundled mac app:
 
 ## Supervision (systemd user unit)
 
-OpenClaw installs a **systemd user service** by default on Linux/WSL2. We
+Synth AI installs a **systemd user service** by default on Linux/WSL2. We
 recommend user services for single-user machines (simpler env, per-user config).
 Use a **system service** for multi-user or always-on servers (no lingering
 required, shared supervision).
@@ -260,7 +260,7 @@ Create `~/.config/systemd/user/openclaw-gateway[-<profile>].service`:
 
 ```
 [Unit]
-Description=OpenClaw Gateway (profile: <profile>, v<version>)
+Description=Synth AI Gateway (profile: <profile>, v<version>)
 After=network-online.target
 Wants=network-online.target
 

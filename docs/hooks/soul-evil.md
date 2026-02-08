@@ -15,7 +15,7 @@ a purge window or by random chance. It does **not** modify files on disk.
 
 When `agent:bootstrap` runs, the hook can replace the `SOUL.md` content in memory
 before the system prompt is assembled. If `SOUL_EVIL.md` is missing or empty,
-OpenClaw logs a warning and keeps the normal `SOUL.md`.
+Synth AI logs a warning and keeps the normal `SOUL.md`.
 
 Sub-agent runs do **not** include `SOUL.md` in their bootstrap files, so this hook
 has no effect on sub-agents.

@@ -1,9 +1,9 @@
 ---
-summary: "Schema-accurate configuration examples for common OpenClaw setups"
+summary: "Schema-accurate configuration examples for common Synth AI setups"
 read_when:
-  - Learning how to configure OpenClaw
+  - Learning how to configure Synth AI
   - Looking for configuration examples
-  - Setting up OpenClaw for the first time
+  - Setting up Synth AI for the first time
 title: "Configuration Examples"
 ---
 

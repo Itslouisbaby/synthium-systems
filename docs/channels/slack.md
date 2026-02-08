@@ -12,7 +12,7 @@ title: "Slack"
 
 1. Create a Slack app and enable **Socket Mode**.
 2. Create an **App Token** (`xapp-...`) and **Bot Token** (`xoxb-...`).
-3. Set tokens for OpenClaw and start the gateway.
+3. Set tokens for Synth AI and start the gateway.
 
 Minimal config:
 
@@ -49,7 +49,7 @@ Use the manifest below so scopes and events stay in sync.
 
 Multi-account support: use `channels.slack.accounts` with per-account tokens and optional `name`. See [`gateway/configuration`](/gateway/configuration#telegramaccounts--discordaccounts--slackaccounts--signalaccounts--imessageaccounts) for the shared pattern.
 
-### OpenClaw config (Socket mode)
+### Synth AI config (Socket mode)
 
 Set tokens via env vars (recommended):
 
@@ -72,7 +72,7 @@ Or via config:
 
 ### User token (optional)
 
-OpenClaw can use a Slack user token (`xoxp-...`) for read operations (history,
+Synth AI can use a Slack user token (`xoxp-...`) for read operations (history,
 pins, reactions, emoji, member info). By default this stays read-only: reads
 prefer the user token when present, and writes still use the bot token unless
 you explicitly opt in. Even with `userTokenReadOnly: false`, the bot token stays
@@ -118,7 +118,7 @@ Example with userTokenReadOnly explicitly set (allow user token writes):
   search) prefer the user token when configured, otherwise the bot token.
 - Write operations (send/edit/delete messages, add/remove reactions, pin/unpin,
   file uploads) use the bot token by default. If `userTokenReadOnly: false` and
-  no bot token is available, OpenClaw falls back to the user token.
+  no bot token is available, Synth AI falls back to the user token.
 
 ### History context
 
@@ -142,7 +142,7 @@ HTTP mode uses the Events API + Interactivity + Slash Commands with a shared req
 Example request URL:
 `https://gateway-host/slack/events`
 
-### OpenClaw config (minimal)
+### Synth AI config (minimal)
 
 ```json5
 {
@@ -169,12 +169,12 @@ user scopes if you plan to configure a user token.
 ```json
 {
   "display_information": {
-    "name": "OpenClaw",
-    "description": "Slack connector for OpenClaw"
+    "name": "Synth AI",
+    "description": "Slack connector for Synth AI"
   },
   "features": {
     "bot_user": {
-      "display_name": "OpenClaw",
+      "display_name": "Synth AI",
       "always_online": false
     },
     "app_home": {
@@ -184,7 +184,7 @@ user scopes if you plan to configure a user token.
     "slash_commands": [
       {
         "command": "/openclaw",
-        "description": "Send a message to OpenClaw",
+        "description": "Send a message to Synth AI",
         "should_escape": false
       }
     ]
@@ -375,7 +375,7 @@ ack reaction after the bot replies.
 
 ## Reply threading
 
-By default, OpenClaw replies in the main channel. Use `channels.slack.replyToMode` to control automatic threading:
+By default, Synth AI replies in the main channel. Use `channels.slack.replyToMode` to control automatic threading:
 
 | Mode    | Behavior                                                                                                                                                            |
 | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -470,7 +470,7 @@ For fine-grained control, use these tags in agent responses:
 - DMs share the `main` session (like WhatsApp/Telegram).
 - Channels map to `agent:<agentId>:slack:channel:<channelId>` sessions.
 - Slash commands use `agent:<agentId>:slack:slash:<userId>` sessions (prefix configurable via `channels.slack.slashCommand.sessionPrefix`).
-- If Slack doesn’t provide `channel_type`, OpenClaw infers it from the channel ID prefix (`D`, `C`, `G`) and defaults to `channel` to keep session keys stable.
+- If Slack doesn’t provide `channel_type`, Synth AI infers it from the channel ID prefix (`D`, `C`, `G`) and defaults to `channel` to keep session keys stable.
 - Native command registration uses `commands.native` (global default `"auto"` → Slack off) and can be overridden per-workspace with `channels.slack.commands.native`. Text commands require standalone `/...` messages and can be disabled with `commands.text: false`. Slack slash commands are managed in the Slack app and are not removed automatically. Use `commands.useAccessGroups: false` to bypass access-group checks for commands.
 - Full command list + config: [Slash commands](/tools/slash-commands)
 
@@ -490,7 +490,7 @@ For fine-grained control, use these tags in agent responses:
   `channels.defaults.groupPolicy`, or a channel allowlist to lock it down.
 - The configure wizard accepts `#channel` names and resolves them to IDs when possible
   (public + private); if multiple matches exist, it prefers the active channel.
-- On startup, OpenClaw resolves channel/user names in allowlists to IDs (when tokens allow)
+- On startup, Synth AI resolves channel/user names in allowlists to IDs (when tokens allow)
   and logs the mapping; unresolved entries are kept as typed.
 - To allow **no channels**, set `channels.slack.groupPolicy: "disabled"` (or keep an empty allowlist).
 

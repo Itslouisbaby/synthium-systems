@@ -1,17 +1,17 @@
 ---
-summary: "OpenClaw on Raspberry Pi (budget self-hosted setup)"
+summary: "Synth AI on Raspberry Pi (budget self-hosted setup)"
 read_when:
-  - Setting up OpenClaw on a Raspberry Pi
-  - Running OpenClaw on ARM devices
+  - Setting up Synth AI on a Raspberry Pi
+  - Running Synth AI on ARM devices
   - Building a cheap always-on personal AI
 title: "Raspberry Pi"
 ---
 
-# OpenClaw on Raspberry Pi
+# Synth AI on Raspberry Pi
 
 ## Goal
 
-Run a persistent, always-on OpenClaw Gateway on a Raspberry Pi for **~$35-80** one-time cost (no monthly fees).
+Run a persistent, always-on Synth AI Gateway on a Raspberry Pi for **~$35-80** one-time cost (no monthly fees).
 
 Perfect for:
 
@@ -107,7 +107,7 @@ echo 'vm.swappiness=10' | sudo tee -a /etc/sysctl.conf
 sudo sysctl -p
 ```
 
-## 6) Install OpenClaw
+## 6) Install Synth AI
 
 ### Option A: Standard Install (Recommended)
 
@@ -221,7 +221,7 @@ htop
 
 ### Binary Compatibility
 
-Most OpenClaw features work on ARM64, but some external binaries may need ARM builds:
+Most Synth AI features work on ARM64, but some external binaries may need ARM builds:
 
 | Tool               | ARM64 Status | Notes                               |
 | ------------------ | ------------ | ----------------------------------- |
