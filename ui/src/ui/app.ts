@@ -103,7 +103,7 @@ function resolveOnboardingMode(): boolean {
 }
 
 @customElement("openclaw-app")
-export class Synth AIApp extends LitElement {
+export class SynthAIApp extends LitElement {
   @state() settings: UiSettings = loadSettings();
   @state() password = "";
   @state() tab: Tab = "chat";
