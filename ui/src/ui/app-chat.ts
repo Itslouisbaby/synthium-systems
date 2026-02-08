@@ -1,4 +1,4 @@
-import type { Synth AIApp } from "./app.ts";
+import type { SynthAIApp } from "./app.ts";
 import type { GatewayHelloOk } from "./gateway.ts";
 import type { ChatAttachment, ChatQueueItem } from "./ui-types.ts";
 import { parseAgentSessionKey } from "../../../src/sessions/session-key-utils.js";
@@ -65,7 +65,7 @@ export async function handleAbortChat(host: ChatHost) {
     return;
   }
   host.chatMessage = "";
-  await abortChatRun(host as unknown as Synth AIApp);
+  await abortChatRun(host as unknown as SynthAIApp);
 }
 
 function enqueueChatMessage(
@@ -104,7 +104,7 @@ async function sendChatMessageNow(
   },
 ) {
   resetToolStream(host as unknown as Parameters<typeof resetToolStream>[0]);
-  const runId = await sendChatMessage(host as unknown as Synth AIApp, message, opts?.attachments);
+  const runId = await sendChatMessage(host as unknown as SynthAIApp, message, opts?.attachments);
   const ok = Boolean(runId);
   if (!ok && opts?.previousDraft != null) {
     host.chatMessage = opts.previousDraft;
@@ -204,8 +204,8 @@ export async function handleSendChat(
 
 export async function refreshChat(host: ChatHost, opts?: { scheduleScroll?: boolean }) {
   await Promise.all([
-    loadChatHistory(host as unknown as Synth AIApp),
-    loadSessions(host as unknown as Synth AIApp, {
+    loadChatHistory(host as unknown as SynthAIApp),
+    loadSessions(host as unknown as SynthAIApp, {
       activeMinutes: CHAT_SESSIONS_ACTIVE_MINUTES,
     }),
     refreshChatAvatar(host),

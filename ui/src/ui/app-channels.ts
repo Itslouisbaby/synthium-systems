@@ -67,7 +67,7 @@ function buildNostrProfileUrl(accountId: string, suffix = ""): string {
 }
 
 export function handleNostrProfileEdit(
-  host: Synth AIApp,
+  host: SynthAIApp,
   accountId: string,
   profile: NostrProfile | null,
 ) {
@@ -75,13 +75,13 @@ export function handleNostrProfileEdit(
   host.nostrProfileFormState = createNostrProfileFormState(profile ?? undefined);
 }
 
-export function handleNostrProfileCancel(host: Synth AIApp) {
+export function handleNostrProfileCancel(host: SynthAIApp) {
   host.nostrProfileFormState = null;
   host.nostrProfileAccountId = null;
 }
 
 export function handleNostrProfileFieldChange(
-  host: Synth AIApp,
+  host: SynthAIApp,
   field: keyof NostrProfile,
   value: string,
 ) {
@@ -102,7 +102,7 @@ export function handleNostrProfileFieldChange(
   };
 }
 
-export function handleNostrProfileToggleAdvanced(host: Synth AIApp) {
+export function handleNostrProfileToggleAdvanced(host: SynthAIApp) {
   const state = host.nostrProfileFormState;
   if (!state) {
     return;
@@ -113,7 +113,7 @@ export function handleNostrProfileToggleAdvanced(host: Synth AIApp) {
   };
 }
 
-export async function handleNostrProfileSave(host: Synth AIApp) {
+export async function handleNostrProfileSave(host: SynthAIApp) {
   const state = host.nostrProfileFormState;
   if (!state || state.saving) {
     return;
@@ -184,7 +184,7 @@ export async function handleNostrProfileSave(host: Synth AIApp) {
   }
 }
 
-export async function handleNostrProfileImport(host: Synth AIApp) {
+export async function handleNostrProfileImport(host: SynthAIApp) {
   const state = host.nostrProfileFormState;
   if (!state || state.importing) {
     return;

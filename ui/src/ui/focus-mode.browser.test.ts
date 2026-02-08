@@ -1,18 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { Synth AIApp } from "./app.ts";
+import { SynthAIApp } from "./app.ts";
 
 // oxlint-disable-next-line typescript/unbound-method
-const originalConnect = Synth AIApp.prototype.connect;
+const originalConnect = SynthAIApp.prototype.connect;
 
 function mountApp(pathname: string) {
   window.history.replaceState({}, "", pathname);
-  const app = document.createElement("openclaw-app") as Synth AIApp;
+  const app = document.createElement("openclaw-app") as SynthAIApp;
   document.body.append(app);
   return app;
 }
 
 beforeEach(() => {
-  Synth AIApp.prototype.connect = () => {
+  SynthAIApp.prototype.connect = () => {
     // no-op: avoid real gateway WS connections in browser tests
   };
   window.__OPENCLAW_CONTROL_UI_BASE_PATH__ = undefined;
@@ -21,7 +21,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  Synth AIApp.prototype.connect = originalConnect;
+  SynthAIApp.prototype.connect = originalConnect;
   window.__OPENCLAW_CONTROL_UI_BASE_PATH__ = undefined;
   localStorage.clear();
   document.body.innerHTML = "";

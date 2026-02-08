@@ -1,5 +1,5 @@
 import type { EventLogEntry } from "./app-events.ts";
-import type { Synth AIApp } from "./app.ts";
+import type { SynthAIApp } from "./app.ts";
 import type { ExecApprovalRequest } from "./controllers/exec-approval.ts";
 import type { GatewayEventFrame, GatewayHelloOk } from "./gateway.ts";
 import type { Tab } from "./navigation.ts";
@@ -140,10 +140,10 @@ export function connectGateway(host: GatewayHost) {
       (host as unknown as { chatStream: string | null }).chatStream = null;
       (host as unknown as { chatStreamStartedAt: number | null }).chatStreamStartedAt = null;
       resetToolStream(host as unknown as Parameters<typeof resetToolStream>[0]);
-      void loadAssistantIdentity(host as unknown as Synth AIApp);
-      void loadAgents(host as unknown as Synth AIApp);
-      void loadNodes(host as unknown as Synth AIApp, { quiet: true });
-      void loadDevices(host as unknown as Synth AIApp, { quiet: true });
+      void loadAssistantIdentity(host as unknown as SynthAIApp);
+      void loadAgents(host as unknown as SynthAIApp);
+      void loadNodes(host as unknown as SynthAIApp, { quiet: true });
+      void loadDevices(host as unknown as SynthAIApp, { quiet: true });
       void refreshActiveTab(host as unknown as Parameters<typeof refreshActiveTab>[0]);
     },
     onClose: ({ code, reason }) => {
@@ -197,7 +197,7 @@ function handleGatewayEventUnsafe(host: GatewayHost, evt: GatewayEventFrame) {
         payload.sessionKey,
       );
     }
-    const state = handleChatEvent(host as unknown as Synth AIApp, payload);
+    const state = handleChatEvent(host as unknown as SynthAIApp, payload);
     if (state === "final" || state === "error" || state === "aborted") {
       resetToolStream(host as unknown as Parameters<typeof resetToolStream>[0]);
       void flushChatQueueForEvent(host as unknown as Parameters<typeof flushChatQueueForEvent>[0]);
@@ -205,14 +205,14 @@ function handleGatewayEventUnsafe(host: GatewayHost, evt: GatewayEventFrame) {
       if (runId && host.refreshSessionsAfterChat.has(runId)) {
         host.refreshSessionsAfterChat.delete(runId);
         if (state === "final") {
-          void loadSessions(host as unknown as Synth AIApp, {
+          void loadSessions(host as unknown as SynthAIApp, {
             activeMinutes: CHAT_SESSIONS_ACTIVE_MINUTES,
           });
         }
       }
     }
     if (state === "final") {
-      void loadChatHistory(host as unknown as Synth AIApp);
+      void loadChatHistory(host as unknown as SynthAIApp);
     }
     return;
   }
@@ -232,7 +232,7 @@ function handleGatewayEventUnsafe(host: GatewayHost, evt: GatewayEventFrame) {
   }
 
   if (evt.event === "device.pair.requested" || evt.event === "device.pair.resolved") {
-    void loadDevices(host as unknown as Synth AIApp, { quiet: true });
+    void loadDevices(host as unknown as SynthAIApp, { quiet: true });
   }
 
   if (evt.event === "exec.approval.requested") {
