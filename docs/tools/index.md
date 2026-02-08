@@ -1,14 +1,14 @@
 ---
-summary: "Agent tool surface for OpenClaw (browser, canvas, nodes, message, cron) replacing legacy `openclaw-*` skills"
+summary: "Agent tool surface for Synth AI (browser, canvas, nodes, message, cron) replacing legacy `openclaw-*` skills"
 read_when:
   - Adding or modifying agent tools
   - Retiring or changing `openclaw-*` skills
 title: "Tools"
 ---
 
-# Tools (OpenClaw)
+# Tools (Synth AI)
 
-OpenClaw exposes **first-class agent tools** for browser, canvas, nodes, and cron.
+Synth AI exposes **first-class agent tools** for browser, canvas, nodes, and cron.
 These replace the old `openclaw-*` skills: the tools are typed, no shelling,
 and the agent should rely on them directly.
 
@@ -27,7 +27,7 @@ Notes:
 
 - Matching is case-insensitive.
 - `*` wildcards are supported (`"*"` means all tools).
-- If `tools.allow` only references unknown or unloaded plugin tool names, OpenClaw logs a warning and ignores the allowlist so core tools stay available.
+- If `tools.allow` only references unknown or unloaded plugin tool names, Synth AI logs a warning and ignores the allowlist so core tools stay available.
 
 ## Tool profiles (base allowlist)
 
@@ -151,7 +151,7 @@ Available groups:
 - `group:automation`: `cron`, `gateway`
 - `group:messaging`: `message`
 - `group:nodes`: `nodes`
-- `group:openclaw`: all built-in OpenClaw tools (excludes provider plugins)
+- `group:openclaw`: all built-in Synth AI tools (excludes provider plugins)
 
 Example (allow only file tools + browser):
 
@@ -260,7 +260,7 @@ Notes:
 
 ### `browser`
 
-Control the dedicated OpenClaw-managed browser.
+Control the dedicated Synth AI-managed browser.
 
 Core actions:
 

@@ -3,13 +3,13 @@ summary: "Pairing overview: approve who can DM you + which nodes can join"
 read_when:
   - Setting up DM access control
   - Pairing a new iOS/Android node
-  - Reviewing OpenClaw security posture
+  - Reviewing Synth AI security posture
 title: "Pairing"
 ---
 
 # Pairing
 
-“Pairing” is OpenClaw’s explicit **owner approval** step.
+“Pairing” is Synth AI’s explicit **owner approval** step.
 It is used in two places:
 
 1. **DM pairing** (who is allowed to talk to the bot)

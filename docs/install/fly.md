@@ -1,11 +1,11 @@
 ---
 title: Fly.io
-description: Deploy OpenClaw on Fly.io
+description: Deploy Synth AI on Fly.io
 ---
 
 # Fly.io Deployment
 
-**Goal:** OpenClaw Gateway running on a [Fly.io](https://fly.io) machine with persistent storage, automatic HTTPS, and Discord/channel access.
+**Goal:** Synth AI Gateway running on a [Fly.io](https://fly.io) machine with persistent storage, automatic HTTPS, and Discord/channel access.
 
 ## What you need
 

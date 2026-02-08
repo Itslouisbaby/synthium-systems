@@ -2,7 +2,7 @@
 summary: "Research notes: offline memory system for Clawd workspaces (Markdown source-of-truth + derived index)"
 read_when:
   - Designing workspace memory (~/.openclaw/workspace) beyond daily Markdown logs
-  - Deciding: standalone CLI vs deep OpenClaw integration
+  - Deciding: standalone CLI vs deep Synth AI integration
   - Adding offline recall + reflection (retain/recall/reflect)
 title: "Workspace Memory Research"
 ---
@@ -168,11 +168,11 @@ Opinion evolution (simple, explainable):
 
 ## CLI integration: standalone vs deep integration
 
-Recommendation: **deep integration in OpenClaw**, but keep a separable core library.
+Recommendation: **deep integration in Synth AI**, but keep a separable core library.
 
-### Why integrate into OpenClaw?
+### Why integrate into Synth AI?
 
-- OpenClaw already knows:
+- Synth AI already knows:
   - the workspace path (`agents.defaults.workspace`)
   - the session model + heartbeats
   - logging + troubleshooting patterns

@@ -9,13 +9,13 @@ title: "Installer Internals"
 
 # Installer internals
 
-OpenClaw ships three installer scripts, served from `openclaw.ai`.
+Synth AI ships three installer scripts, served from `openclaw.ai`.
 
 | Script                             | Platform             | What it does                                                                                 |
 | ---------------------------------- | -------------------- | -------------------------------------------------------------------------------------------- |
-| [`install.sh`](#installsh)         | macOS / Linux / WSL  | Installs Node if needed, installs OpenClaw via npm (default) or git, and can run onboarding. |
-| [`install-cli.sh`](#install-clish) | macOS / Linux / WSL  | Installs Node + OpenClaw into a local prefix (`~/.openclaw`). No root required.              |
-| [`install.ps1`](#installps1)       | Windows (PowerShell) | Installs Node if needed, installs OpenClaw via npm (default) or git, and can run onboarding. |
+| [`install.sh`](#installsh)         | macOS / Linux / WSL  | Installs Node if needed, installs Synth AI via npm (default) or git, and can run onboarding. |
+| [`install-cli.sh`](#install-clish) | macOS / Linux / WSL  | Installs Node + Synth AI into a local prefix (`~/.openclaw`). No root required.              |
+| [`install.ps1`](#installps1)       | Windows (PowerShell) | Installs Node if needed, installs Synth AI via npm (default) or git, and can run onboarding. |
 
 ## Quick commands
 
@@ -76,7 +76,7 @@ Recommended for most interactive installs on macOS/Linux/WSL.
   <Step title="Ensure Git">
     Installs Git if missing.
   </Step>
-  <Step title="Install OpenClaw">
+  <Step title="Install Synth AI">
     - `npm` method (default): global npm install
     - `git` method: clone/update repo, install deps with pnpm, build, then install wrapper at `~/.local/bin/openclaw`
   </Step>
@@ -89,7 +89,7 @@ Recommended for most interactive installs on macOS/Linux/WSL.
 
 ### Source checkout detection
 
-If run inside an OpenClaw checkout (`package.json` + `pnpm-workspace.yaml`), the script offers:
+If run inside an Synth AI checkout (`package.json` + `pnpm-workspace.yaml`), the script offers:
 
 - use checkout (`git`), or
 - use global install (`npm`)
@@ -180,7 +180,7 @@ Designed for environments where you want everything under a local prefix (defaul
   <Step title="Ensure Git">
     If Git is missing, attempts install via apt/dnf/yum on Linux or Homebrew on macOS.
   </Step>
-  <Step title="Install OpenClaw under prefix">
+  <Step title="Install Synth AI under prefix">
     Installs with npm using `--prefix <prefix>`, then writes wrapper to `<prefix>/bin/openclaw`.
   </Step>
 </Steps>
@@ -216,7 +216,7 @@ Designed for environments where you want everything under a local prefix (defaul
 | Flag                   | Description                                                                     |
 | ---------------------- | ------------------------------------------------------------------------------- |
 | `--prefix <path>`      | Install prefix (default: `~/.openclaw`)                                         |
-| `--version <ver>`      | OpenClaw version or dist-tag (default: `latest`)                                |
+| `--version <ver>`      | Synth AI version or dist-tag (default: `latest`)                                |
 | `--node-version <ver>` | Node version (default: `22.22.0`)                                               |
 | `--json`               | Emit NDJSON events                                                              |
 | `--onboard`            | Run `openclaw onboard` after install                                            |
@@ -231,7 +231,7 @@ Designed for environments where you want everything under a local prefix (defaul
 | Variable                                    | Description                                                                       |
 | ------------------------------------------- | --------------------------------------------------------------------------------- |
 | `OPENCLAW_PREFIX=<path>`                    | Install prefix                                                                    |
-| `OPENCLAW_VERSION=<ver>`                    | OpenClaw version or dist-tag                                                      |
+| `OPENCLAW_VERSION=<ver>`                    | Synth AI version or dist-tag                                                      |
 | `OPENCLAW_NODE_VERSION=<ver>`               | Node version                                                                      |
 | `OPENCLAW_NO_ONBOARD=1`                     | Skip onboarding                                                                   |
 | `OPENCLAW_NPM_LOGLEVEL=error\|warn\|notice` | npm log level                                                                     |
@@ -254,7 +254,7 @@ Designed for environments where you want everything under a local prefix (defaul
   <Step title="Ensure Node.js 22+">
     If missing, attempts install via winget, then Chocolatey, then Scoop.
   </Step>
-  <Step title="Install OpenClaw">
+  <Step title="Install Synth AI">
     - `npm` method (default): global npm install using selected `-Tag`
     - `git` method: clone/update repo, install/build with pnpm, and install wrapper at `%USERPROFILE%\.local\bin\openclaw.cmd`
   </Step>
