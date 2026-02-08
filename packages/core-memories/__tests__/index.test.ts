@@ -9,19 +9,16 @@ import { getCoreMemories, CoreMemories, FlashEntry } from "../src/index";
 const isCI = process.env.CI === "true" || process.env.CI === "1";
 
 // Test setup
-describe("CoreMemories v2.1", () => {
+const describeCI = isCI ? describe.skip : describe;
+
+describeCI("CoreMemories v2.1", () => {
   let cm: CoreMemories;
 
   beforeAll(async () => {
-    // Skip initialization in CI to avoid Ollama detection hanging
-    if (isCI) {
-      return;
-    }
     cm = await getCoreMemories();
   });
 
-  // Skip all tests in CI environment (beforeAll still runs)
-  const itCI = isCI ? it.skip : it;
+  const itCI = it;
 
   describe("Flash Entry Management", () => {
     itCI("should add a normal entry without user flag", () => {

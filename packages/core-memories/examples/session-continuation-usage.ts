@@ -8,6 +8,7 @@
 
 import { CoreMemories, FlashEntry } from "../src/index";
 import { onSessionStart, heartbeatSessionCheck } from "../src/session-continuation-integration";
+import { SessionContinuation } from "../src/session-continuation";
 
 // ============================================================================
 // EXAMPLE 1: On Gateway/Session Start
@@ -46,7 +47,7 @@ async function onUserContinues(topic: string): Promise<string | undefined> {
   const cm = new CoreMemories();
   await cm.initialize();
 
-  const results = cm.findByKeyword(topic);
+  const results = await cm.findByKeyword(topic);
   const allResults = [...results.flash, ...results.warm];
 
   if (allResults.length > 0) {
@@ -107,13 +108,12 @@ async function testSessionContinuation(): Promise<void> {
   const cm = new CoreMemories();
   await cm.initialize();
 
+  const sc = new SessionContinuation(cm, CONFIG.sessionContinuation);
+
   for (const tc of testCases) {
     const lastSession = Date.now() - tc.gap * 60 * 60 * 1000;
-    // onSessionStart returns void - check side effects
-    await onSessionStart(cm, (msg: string) => {
-      console.log(`Gap ${tc.gap}h: ${msg || "(no message)"}`);
-      return;
-    });
+    const result = await sc.checkSession("default", lastSession);
+    console.log(`Gap ${tc.gap}h: ${result.message || "(no message)"}`);
   }
 }
 
