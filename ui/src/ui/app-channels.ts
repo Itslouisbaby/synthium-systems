@@ -1,4 +1,4 @@
-import type { Synth AIApp } from "./app.ts";
+import type { SynthAIApp } from "./app.ts";
 import type { NostrProfile } from "./types.ts";
 import {
   loadChannels,
@@ -9,28 +9,28 @@ import {
 import { loadConfig, saveConfig } from "./controllers/config.ts";
 import { createNostrProfileFormState } from "./views/channels.nostr-profile-form.ts";
 
-export async function handleWhatsAppStart(host: Synth AIApp, force: boolean) {
+export async function handleWhatsAppStart(host: SynthAIApp, force: boolean) {
   await startWhatsAppLogin(host, force);
   await loadChannels(host, true);
 }
 
-export async function handleWhatsAppWait(host: Synth AIApp) {
+export async function handleWhatsAppWait(host: SynthAIApp) {
   await waitWhatsAppLogin(host);
   await loadChannels(host, true);
 }
 
-export async function handleWhatsAppLogout(host: Synth AIApp) {
+export async function handleWhatsAppLogout(host: SynthAIApp) {
   await logoutWhatsApp(host);
   await loadChannels(host, true);
 }
 
-export async function handleChannelConfigSave(host: Synth AIApp) {
+export async function handleChannelConfigSave(host: SynthAIApp) {
   await saveConfig(host);
   await loadConfig(host);
   await loadChannels(host, true);
 }
 
-export async function handleChannelConfigReload(host: Synth AIApp) {
+export async function handleChannelConfigReload(host: SynthAIApp) {
   await loadConfig(host);
   await loadChannels(host, true);
 }
@@ -57,7 +57,7 @@ function parseValidationErrors(details: unknown): Record<string, string> {
   return errors;
 }
 
-function resolveNostrAccountId(host: Synth AIApp): string {
+function resolveNostrAccountId(host: SynthAIApp): string {
   const accounts = host.channelsSnapshot?.channelAccounts?.nostr ?? [];
   return accounts[0]?.accountId ?? host.nostrProfileAccountId ?? "default";
 }
