@@ -102,6 +102,7 @@ async function maybeRunCoreMemoriesMaintenance(params: {
   agentId: string;
   workspaceDir: string;
   sessionKey: string;
+  nowMs?: number;
 }): Promise<void> {
   const enabled = params.heartbeat?.coreMemories?.enabled === true;
   if (!enabled) {
@@ -123,7 +124,7 @@ async function maybeRunCoreMemoriesMaintenance(params: {
     "coremem-maintenance.json",
   );
 
-  const nowMs = Date.now();
+  const nowMs = typeof params.nowMs === "number" ? params.nowMs : Date.now();
   try {
     const raw = await fs.readFile(statePath, "utf-8");
     const parsed = JSON.parse(raw) as { lastRunMs?: number };
@@ -688,6 +689,7 @@ export async function runHeartbeatOnce(opts: {
       agentId,
       workspaceDir,
       sessionKey,
+      nowMs: startedAt,
     });
 
     const replyResult = await getReplyFromConfig(ctx, { isHeartbeat: true }, cfg);
