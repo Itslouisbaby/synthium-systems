@@ -1,4 +1,4 @@
-# 🦞 Synth AI — Synthium Systems
+# Synth AI — Synthium Systems
 
 <p align="center">
     <picture>
