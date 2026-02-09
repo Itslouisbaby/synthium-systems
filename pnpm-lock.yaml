@@ -69,6 +69,9 @@ importers:
       '@openclaw/core-memories':
         specifier: workspace:*
         version: link:packages/core-memories
+      '@openclaw/neuronwaves':
+        specifier: workspace:*
+        version: link:packages/neuronwaves
       '@sinclair/typebox':
         specifier: 0.34.48
         version: 0.34.48
