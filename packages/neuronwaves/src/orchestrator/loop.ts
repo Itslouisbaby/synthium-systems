@@ -41,18 +41,58 @@ export async function runNeuronWavesLoop(input: LoopInput): Promise<LoopResult> 
     steps: planFromText(input.text),
   };
 
+  const stats = {
+    actionsConsidered: 0,
+    externalCount: 0,
+    irreversibleCount: 0,
+    toolCallsCount: 0,
+  };
+
+  const isExternal = (actionClass: string) =>
+    [
+      "external_read",
+      "external_write_reversible",
+      "external_write_irreversible",
+      "external_comms",
+      "money_movement",
+      "identity_security_sensitive",
+    ].includes(actionClass);
+
+  const isIrreversible = (actionClass: string) =>
+    ["external_write_irreversible", "money_movement", "identity_security_sensitive"].includes(
+      actionClass,
+    );
+
   for (const step of plan.steps) {
-    const policy = decidePolicy({
-      autonomy: input.autonomy,
-      actionClass: step.actionClass,
-      toolName: step.toolName,
-      targetDomain: (step.inputs["domain"] as string | undefined) ?? undefined,
-      targetContact: (step.inputs["contact"] as string | undefined) ?? undefined,
-      targetFolder: (step.inputs["folder"] as string | undefined) ?? undefined,
-      targetChannel: (step.inputs["channel"] as string | undefined) ?? undefined,
-    });
+    const policy = decidePolicy(
+      {
+        autonomy: input.autonomy,
+        actionClass: step.actionClass,
+        toolName: step.toolName,
+        targetDomain: (step.inputs["domain"] as string | undefined) ?? undefined,
+        targetContact: (step.inputs["contact"] as string | undefined) ?? undefined,
+        targetFolder: (step.inputs["folder"] as string | undefined) ?? undefined,
+        targetChannel: (step.inputs["channel"] as string | undefined) ?? undefined,
+      },
+      stats,
+    );
+
     step.policyReasons = policy.reasons;
     step.status = policy.decision === "block" ? "blocked" : "allowed";
+
+    if (policy.decision !== "block") {
+      stats.actionsConsidered += 1;
+      if (isExternal(step.actionClass)) {
+        stats.externalCount += 1;
+      }
+      if (isIrreversible(step.actionClass)) {
+        stats.irreversibleCount += 1;
+      }
+      if (step.toolName) {
+        stats.toolCallsCount += 1;
+      }
+    }
+
     await writer.writeJsonl("audit/actions.jsonl", {
       id: nanoid(),
       timestampMs: Date.now(),

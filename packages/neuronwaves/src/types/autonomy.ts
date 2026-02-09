@@ -29,6 +29,8 @@ export interface AutonomyDenylist {
 export interface AutonomyLimits {
   maxActionsPerRun: number;
   maxToolCallsPerRun: number;
+  maxExternalPerRun: number;
+  maxIrreversiblePerRun: number;
 }
 
 export interface AutonomyConfig {

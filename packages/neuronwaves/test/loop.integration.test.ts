@@ -13,7 +13,12 @@ describe("NeuronWaves loop integration", () => {
       requireApproval: true,
       allow: { tools: [], domains: [], contacts: [], folders: [], channels: [] },
       deny: { tools: [], domains: [], actions: [] },
-      limits: { maxActionsPerRun: 5, maxToolCallsPerRun: 10 },
+      limits: {
+        maxActionsPerRun: 5,
+        maxToolCallsPerRun: 10,
+        maxExternalPerRun: 3,
+        maxIrreversiblePerRun: 1,
+      },
     };
 
     const res = await runNeuronWavesLoop({

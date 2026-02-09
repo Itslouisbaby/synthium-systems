@@ -10,6 +10,13 @@ export interface PolicyGateInput {
   targetChannel?: string;
 }
 
+export interface PolicyGateStats {
+  actionsConsidered: number;
+  externalCount: number;
+  irreversibleCount: number;
+  toolCallsCount: number;
+}
+
 function isDenied(
   cfg: AutonomyConfig,
   actionClass: ActionClass,
@@ -42,9 +49,39 @@ function allowlistCheck(list: string[], value: string | undefined, label: string
   return [];
 }
 
-export function decidePolicy(input: PolicyGateInput): PolicyDecision {
+const EXTERNAL_CLASSES = new Set<ActionClass>([
+  "external_read",
+  "external_write_reversible",
+  "external_write_irreversible",
+  "external_comms",
+  "money_movement",
+  "identity_security_sensitive",
+]);
+
+const IRREVERSIBLE_CLASSES = new Set<ActionClass>([
+  "external_write_irreversible",
+  "money_movement",
+  "identity_security_sensitive",
+]);
+
+export function decidePolicy(input: PolicyGateInput, stats: PolicyGateStats): PolicyDecision {
   const { autonomy, actionClass, toolName, targetDomain, targetContact, targetFolder, targetChannel } =
     input;
+
+  if (stats.actionsConsidered >= autonomy.limits.maxActionsPerRun) {
+    return { decision: "block", reasons: ["Blocked: maxActionsPerRun reached"] };
+  }
+
+  if (EXTERNAL_CLASSES.has(actionClass) && stats.externalCount >= autonomy.limits.maxExternalPerRun) {
+    return { decision: "block", reasons: ["Blocked: maxExternalPerRun reached"] };
+  }
+
+  if (
+    IRREVERSIBLE_CLASSES.has(actionClass) &&
+    stats.irreversibleCount >= autonomy.limits.maxIrreversiblePerRun
+  ) {
+    return { decision: "block", reasons: ["Blocked: maxIrreversiblePerRun reached"] };
+  }
 
   const deniedReasons = isDenied(autonomy, actionClass, toolName, targetDomain);
   if (deniedReasons.length > 0) {
