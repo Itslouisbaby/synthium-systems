@@ -1,98 +1,114 @@
-import type { PlanStep } from "../types/plan.js";
-import type { ActionClass } from "../types/action.js";
-import type { PolicyConfig, PolicyDecision } from "../types/policy.js";
+import type { ActionClass, AutonomyConfig, PolicyDecision } from "../types/autonomy.js";
 
-export type PolicyGateStats = {
-  externalCount?: number;
-  irreversibleCount?: number;
-};
-
-export function classifyStep(step: PlanStep): ActionClass {
-  return step.classification.class;
+export interface PolicyGateInput {
+  autonomy: AutonomyConfig;
+  actionClass: ActionClass;
+  toolName?: string;
+  targetDomain?: string;
+  targetContact?: string;
+  targetFolder?: string;
+  targetChannel?: string;
 }
 
-const EXTERNAL_CLASSES = new Set<ActionClass>([
-  "external_read",
-  "external_write_reversible",
-  "external_write_irreversible",
-  "external_comms",
-  "money_movement",
-  "identity_security_sensitive",
-]);
-
-const IRREVERSIBLE_CLASSES = new Set<ActionClass>([
-  "external_write_irreversible",
-  "money_movement",
-  "identity_security_sensitive",
-]);
-
-function isAllowlisted(policy: PolicyConfig, actionClass: ActionClass, key?: string) {
-  if (!key) return false;
-  const allowlist = policy.allowlists?.[actionClass] ?? [];
-  return allowlist.includes(key);
-}
-
-function enforceLimits(
-  policy: PolicyConfig,
+function isDenied(
+  cfg: AutonomyConfig,
   actionClass: ActionClass,
-  stats: PolicyGateStats | undefined,
-): PolicyDecision | null {
-  const limits = policy.limits;
-  if (!limits || !stats) return null;
-
-  if (limits.maxExternalPerRun != null && EXTERNAL_CLASSES.has(actionClass)) {
-    if ((stats.externalCount ?? 0) >= limits.maxExternalPerRun) {
-      return {
-        decision: "deny",
-        reason: "maxExternalPerRun",
-        tier: policy.tier,
-      };
-    }
+  toolName?: string,
+  targetDomain?: string,
+): string[] {
+  const reasons: string[] = [];
+  if (cfg.deny.actions.includes(actionClass)) {
+    reasons.push(`Denied by action denylist: ${actionClass}`);
   }
-
-  if (limits.maxIrreversiblePerRun != null && IRREVERSIBLE_CLASSES.has(actionClass)) {
-    if ((stats.irreversibleCount ?? 0) >= limits.maxIrreversiblePerRun) {
-      return {
-        decision: "deny",
-        reason: "maxIrreversiblePerRun",
-        tier: policy.tier,
-      };
-    }
+  if (toolName && cfg.deny.tools.includes(toolName)) {
+    reasons.push(`Denied by tool denylist: ${toolName}`);
   }
-
-  return null;
+  if (targetDomain && cfg.deny.domains.includes(targetDomain)) {
+    reasons.push(`Denied by domain denylist: ${targetDomain}`);
+  }
+  return reasons;
 }
 
-export function decide(policy: PolicyConfig, step: PlanStep, stats?: PolicyGateStats): PolicyDecision {
-  const actionClass = classifyStep(step);
-  const limitDecision = enforceLimits(policy, actionClass, stats);
-  if (limitDecision) return limitDecision;
+function allowlistCheck(list: string[], value: string | undefined, label: string): string[] {
+  if (list.length === 0) {
+    return [`Allowlist for ${label} is empty`];
+  }
+  if (!value) {
+    return [`Missing ${label} for allowlist validation`];
+  }
+  if (!list.includes(value)) {
+    return [`${label} not allowlisted: ${value}`];
+  }
+  return [];
+}
 
-  if (policy.tier === 1) {
-    if (actionClass === "local_read" || actionClass === "local_write") {
-      return { decision: "allow", reason: "tier1-local", tier: policy.tier };
-    }
-    return { decision: "deny", reason: "tier1-external", tier: policy.tier };
+export function decidePolicy(input: PolicyGateInput): PolicyDecision {
+  const { autonomy, actionClass, toolName, targetDomain, targetContact, targetFolder, targetChannel } =
+    input;
+
+  const deniedReasons = isDenied(autonomy, actionClass, toolName, targetDomain);
+  if (deniedReasons.length > 0) {
+    return { decision: "block", reasons: deniedReasons };
   }
 
-  if (policy.tier === 2) {
+  if (autonomy.level === 1) {
     if (actionClass === "local_read" || actionClass === "local_write") {
-      return { decision: "allow", reason: "tier2-local", tier: policy.tier };
+      return { decision: "allow", reasons: [] };
     }
+    return { decision: "block", reasons: ["Level 1 blocks all external actions"] };
+  }
 
-    if (actionClass === "external_read") {
-      return { decision: "allow", reason: "tier2-external-read", tier: policy.tier };
+  if (autonomy.level === 2) {
+    if (
+      actionClass === "local_read" ||
+      actionClass === "local_write" ||
+      actionClass === "external_read"
+    ) {
+      return { decision: "allow", reasons: [] };
     }
 
     if (actionClass === "external_write_reversible" || actionClass === "external_comms") {
-      const allowlisted = isAllowlisted(policy, actionClass, step.classification.allowlistKey);
-      return allowlisted
-        ? { decision: "allow", reason: "tier2-allowlisted", tier: policy.tier }
-        : { decision: "ask", reason: "tier2-allowlist-required", tier: policy.tier };
+      const reasons: string[] = [];
+      reasons.push(...allowlistCheck(autonomy.allow.tools, toolName, "tool"));
+      reasons.push(...allowlistCheck(autonomy.allow.domains, targetDomain, "domain"));
+      if (actionClass === "external_comms") {
+        reasons.push(...allowlistCheck(autonomy.allow.contacts, targetContact, "contact"));
+        reasons.push(...allowlistCheck(autonomy.allow.channels, targetChannel, "channel"));
+      } else {
+        reasons.push(...allowlistCheck(autonomy.allow.folders, targetFolder, "folder"));
+      }
+      if (reasons.length > 0) {
+        return { decision: "block", reasons };
+      }
+      if (autonomy.requireApproval) {
+        return {
+          decision: "allow_with_prompt",
+          reasons: ["Level 2 requires approval for reversible external writes"],
+        };
+      }
+      return { decision: "allow", reasons: [] };
     }
 
-    return { decision: "deny", reason: "tier2-high-risk", tier: policy.tier };
+    return {
+      decision: "block",
+      reasons: ["Level 2 blocks irreversible, money, and identity sensitive actions"],
+    };
   }
 
-  return { decision: "allow", reason: "tier3-broad", tier: policy.tier };
+  const hardBlocked: ActionClass[] = ["money_movement", "identity_security_sensitive"];
+  if (hardBlocked.includes(actionClass)) {
+    return {
+      decision: "block",
+      reasons: [
+        "Dev mode still blocks money movement and identity security sensitive actions by default",
+      ],
+    };
+  }
+  if (autonomy.requireApproval && actionClass === "external_write_irreversible") {
+    return {
+      decision: "allow_with_prompt",
+      reasons: ["Dev mode requires approval for irreversible writes when requireApproval is enabled"],
+    };
+  }
+  return { decision: "allow", reasons: [] };
 }

@@ -1,7 +1,15 @@
-export type ContextBundle = {
+export interface MemoryEntry {
   id: string;
-  createdAtMs: number;
-  summary: string;
-  flashEntries?: string[];
-  meta?: Record<string, unknown>;
-};
+  timestampMs: number;
+  kind: "user" | "assistant" | "system";
+  text: string;
+  tags: string[];
+}
+
+export interface ContextBundle {
+  flash: MemoryEntry[];
+  warmHits: MemoryEntry[];
+  semanticFacts: string[];
+  activeGoalId?: string;
+  notes: string[];
+}

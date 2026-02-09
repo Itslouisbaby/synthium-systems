@@ -1,11 +1,13 @@
-import type { PolicyDecision } from "./policy.js";
+export type EvaluationOutcome = "success" | "partial" | "blocked" | "failed";
 
-export type EvaluationRecord = {
-  id: string;
-  runId: string;
-  stepId: string;
-  atMs: number;
-  status: "simulated" | "skipped" | "blocked";
-  policy: PolicyDecision;
-  notes?: string;
-};
+export interface EvaluationRecord {
+  evalId: string;
+  timestampMs: number;
+  goalId: string;
+  planId: string;
+  outcome: EvaluationOutcome;
+  whatWorked: string[];
+  whatFailed: string[];
+  rootCause: string[];
+  improvements: string[];
+}

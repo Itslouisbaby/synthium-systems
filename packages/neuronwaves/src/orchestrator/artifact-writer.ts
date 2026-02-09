@@ -1,54 +1,32 @@
-import fs from "node:fs/promises";
-import path from "node:path";
+import { mkdir, appendFile, writeFile } from "node:fs/promises";
+import { join } from "node:path";
 
-export type ArtifactType =
-  | "observations"
-  | "plans"
-  | "evaluations"
-  | "audit_actions"
-  | "state_active";
-
-export function resolveNeuronWavesRoot(workspaceDir: string) {
-  return path.join(workspaceDir, ".openclaw", "neuronwaves");
+export interface ArtifactWriter {
+  rootDir: string;
+  writeJsonl: (relativePath: string, payload: unknown) => Promise<void>;
+  writeJson: (relativePath: string, payload: unknown) => Promise<void>;
+  ensureDirs: () => Promise<void>;
 }
 
-export function resolveArtifactPath(workspaceDir: string, type: ArtifactType) {
-  const root = resolveNeuronWavesRoot(workspaceDir);
-  switch (type) {
-    case "observations":
-      return path.join(root, "observations.jsonl");
-    case "plans":
-      return path.join(root, "plans.jsonl");
-    case "evaluations":
-      return path.join(root, "evaluations.jsonl");
-    case "audit_actions":
-      return path.join(root, "audit", "actions.jsonl");
-    case "state_active":
-      return path.join(root, "state", "active.json");
+export function createArtifactWriter(workspaceDir: string): ArtifactWriter {
+  const rootDir = join(workspaceDir, ".openclaw", "neuronwaves");
+
+  async function ensureDirs(): Promise<void> {
+    await mkdir(join(rootDir, "audit"), { recursive: true });
+    await mkdir(join(rootDir, "state"), { recursive: true });
   }
-}
 
-async function ensureDirForFile(filePath: string) {
-  await fs.mkdir(path.dirname(filePath), { recursive: true });
-}
+  async function writeJsonl(relativePath: string, payload: unknown): Promise<void> {
+    const full = join(rootDir, relativePath);
+    const line = JSON.stringify(payload) + "\n";
+    await appendFile(full, line, { encoding: "utf8" });
+  }
 
-export async function writeArtifact(
-  workspaceDir: string,
-  type: Exclude<ArtifactType, "state_active">,
-  payload: unknown,
-): Promise<void> {
-  const filePath = resolveArtifactPath(workspaceDir, type);
-  await ensureDirForFile(filePath);
-  await fs.appendFile(filePath, JSON.stringify(payload) + "\n", "utf-8");
-}
+  async function writeJson(relativePath: string, payload: unknown): Promise<void> {
+    const full = join(rootDir, relativePath);
+    const text = JSON.stringify(payload, null, 2) + "\n";
+    await writeFile(full, text, { encoding: "utf8" });
+  }
 
-export async function writeActiveState(
-  workspaceDir: string,
-  payload: unknown,
-): Promise<void> {
-  const filePath = resolveArtifactPath(workspaceDir, "state_active");
-  await ensureDirForFile(filePath);
-  const tmpPath = `${filePath}.tmp`;
-  await fs.writeFile(tmpPath, JSON.stringify(payload, null, 2) + "\n", "utf-8");
-  await fs.rename(tmpPath, filePath);
+  return { rootDir, ensureDirs, writeJsonl, writeJson };
 }

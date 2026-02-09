@@ -1,42 +1,32 @@
-# NeuronWaves (PR1)
+# NeuronWaves
 
-NeuronWaves is the deterministic skeleton for a safe, autonomous loop. PR1 ships typed contracts,
-artifact persistence, a 3-tier policy gate, and a stubbed orchestrator that never executes external
-actions.
+NeuronWaves is a domain agnostic cognition loop engine designed to power Synthetic Digital Humans.
 
-## Goals (PR1)
+## PR 1 scope
 
-- Typed contracts used everywhere (no untyped objects crossing modules).
-- Deterministic artifact output under `.openclaw/neuronwaves/`.
-- Safe-by-default policy gate with three autonomy tiers.
-- Minimal loop orchestrator that is runnable, testable, and non-destructive.
+1. Typed artifact contracts
+2. Deterministic artifact persistence under agent workspace
+3. Three autonomy levels with a policy gate
+4. Audit logging for planned and executed actions
+5. Minimal orchestrator loop that runs end to end with stub execution
+6. Unit tests plus an integration test
 
-## Artifacts
+## Artifacts produced per loop run
 
-A single loop run writes at least one entry to each file:
+1. Observation
+2. PlanGraph
+3. Audit entries
+4. EvaluationRecord
+5. LoopRunSnapshot
 
-- `.openclaw/neuronwaves/observations.jsonl`
-- `.openclaw/neuronwaves/plans.jsonl`
-- `.openclaw/neuronwaves/evaluations.jsonl`
-- `.openclaw/neuronwaves/audit/actions.jsonl`
-- `.openclaw/neuronwaves/state/active.json`
+Storage location:
 
-## API (PR1)
+`<agentWorkspace>/.openclaw/neuronwaves/`
 
-```ts
-import { runLoop } from "@openclaw/neuronwaves";
+## Autonomy levels
 
-await runLoop({
-  input: {
-    message: "Summarize my open tasks",
-    source: "telegram",
-  },
-  policy: { tier: 1 },
-  workspaceDir: "/path/to/agent/workspace",
-});
-```
+- Level 1 Assist
+- Level 2 Delegated
+- Level 3 Dev
 
-## Notes
-
-- External execution is stubbed in PR1.
-- CoreMemories integration is best-effort and never blocks the loop.
+Loop invariant: Observe → Recall → Goal → Plan → Gate → Act → Evaluate → Persist

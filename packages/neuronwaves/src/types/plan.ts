@@ -1,16 +1,24 @@
-import type { ActionClassification } from "./action.js";
+import type { ActionClass } from "./autonomy.js";
 
-export type PlanStep = {
-  id: string;
+export type StepStatus = "proposed" | "allowed" | "blocked" | "executed" | "skipped";
+
+export interface PlanStep {
+  stepId: string;
   title: string;
-  description?: string;
-  classification: ActionClassification;
-  meta?: Record<string, unknown>;
-};
+  actionClass: ActionClass;
+  toolName?: string;
+  inputs: Record<string, unknown>;
+  expectedOutput: string;
+  preconditions: string[];
+  postconditions: string[];
+  riskFlags: string[];
+  status: StepStatus;
+  policyReasons: string[];
+}
 
-export type PlanGraph = {
-  id: string;
-  goal: string;
-  steps: PlanStep[];
+export interface PlanGraph {
+  planId: string;
+  goalId: string;
   createdAtMs: number;
-};
+  steps: PlanStep[];
+}

@@ -1,36 +1,36 @@
-export type CoreMemoriesAdapter = {
-  flashEntries: string[];
-  recordEvent: (entry: { atMs: number; summary: string }) => Promise<void>;
-};
+import type { ContextBundle, MemoryEntry } from "../types/context.js";
 
-export async function loadCoreMemoriesAdapter(params: {
-  memoryDir?: string;
-}): Promise<CoreMemoriesAdapter> {
-  try {
-    const mod = (await import("@openclaw/core-memories")) as {
-      getCoreMemories: (opts?: { memoryDir?: string }) => Promise<{
-        getFlashEntries: () => { content: string }[];
-        addFlashEntry: (content: string, speaker?: string, type?: string) => unknown;
-      }>;
-    };
+export interface CoreMemoriesAdapter {
+  recallFlash: () => Promise<MemoryEntry[]>;
+  recallWarmHits: (keywords: string[]) => Promise<MemoryEntry[]>;
+}
 
-    const cm = await mod.getCoreMemories({ memoryDir: params.memoryDir });
-    const flashEntries = cm.getFlashEntries().map((entry) => entry.content);
+export function createCoreMemoriesAdapterStub(): CoreMemoriesAdapter {
+  return {
+    async recallFlash(): Promise<MemoryEntry[]> {
+      return [];
+    },
+    async recallWarmHits(): Promise<MemoryEntry[]> {
+      return [];
+    },
+  };
+}
 
-    return {
-      flashEntries,
-      recordEvent: async (entry) => {
-        try {
-          cm.addFlashEntry(entry.summary, "neuronwaves", "neuronwaves_event");
-        } catch {
-          // ignore
-        }
-      },
-    };
-  } catch {
-    return {
-      flashEntries: [],
-      recordEvent: async () => {},
-    };
-  }
+export async function buildContextBundle(
+  adapter: CoreMemoriesAdapter,
+  userText: string,
+): Promise<ContextBundle> {
+  const flash = await adapter.recallFlash();
+  const keywords = extractKeywords(userText);
+  const warmHits = await adapter.recallWarmHits(keywords);
+  return { flash, warmHits, semanticFacts: [], notes: [] };
+}
+
+function extractKeywords(text: string): string[] {
+  return text
+    .toLowerCase()
+    .split(/\s+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length >= 4)
+    .slice(0, 8);
 }

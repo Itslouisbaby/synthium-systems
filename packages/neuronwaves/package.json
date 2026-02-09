@@ -1,51 +1,30 @@
 {
-  "name": "@openclaw/neuronwaves",
+  "name": "@synthium/neuronwaves",
   "version": "0.1.0",
-  "description": "NeuronWaves cognition loop scaffolding with deterministic artifacts and autonomy gates",
-  "keywords": [
-    "agent",
-    "autonomy",
-    "neuronwaves",
-    "openclaw"
-  ],
-  "license": "MIT",
-  "author": "OpenClaw Contributors <contributors@openclaw.org>",
-  "contributors": [
-    "OpenClaw Community"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/openclaw/openclaw.git",
-    "directory": "packages/neuronwaves"
-  },
+  "private": true,
   "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "default": "./dist/index.js"
     }
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "tsc",
-    "format": "oxfmt --check",
-    "format:fix": "oxfmt --write",
-    "lint": "oxlint --type-aware --tsconfig tsconfig.json",
-    "lint:fix": "oxlint --type-aware --tsconfig tsconfig.json --fix",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "test": "vitest run --config vitest.config.ts",
+    "lint": "echo \"lint handled at repo root\""
+  },
+  "dependencies": {
+    "nanoid": "^5.0.7"
   },
   "devDependencies": {
-    "@types/node": "^25.2.0",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.18"
-  },
-  "peerDependencies": {
-    "openclaw": ">=2026.2.0"
-  },
-  "engines": {
-    "node": ">=18.0.0"
+    "tsup": "^8.2.4",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
   }
 }

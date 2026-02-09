@@ -1,12 +1,9 @@
-import type { PolicyDecision } from "../types/policy.js";
-import type { PlanStep } from "../types/plan.js";
-
-export type AuditActionRecord = {
+export interface AuditEntry {
   id: string;
-  runId: string;
+  timestampMs: number;
+  kind: "plan_step" | "execution";
   stepId: string;
-  atMs: number;
-  classification: PlanStep["classification"];
-  decision: PolicyDecision;
-  status: "simulated" | "skipped" | "blocked";
-};
+  actionClass: string;
+  decision: string;
+  details: Record<string, unknown>;
+}

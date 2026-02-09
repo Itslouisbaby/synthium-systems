@@ -1,7 +1,8 @@
-export { runLoop } from "./orchestrator/loop.js";
-export type { LoopInput, LoopResult } from "./orchestrator/loop.js";
-export { writeArtifact, writeActiveState } from "./orchestrator/artifact-writer.js";
-export { classifyStep, decide } from "./execution/policy-gate.js";
-export type { AuditActionRecord } from "./execution/audit-log.js";
-export { loadCoreMemoriesAdapter } from "./integration/corememories-adapter.js";
-export * from "./types/index.js";
+export * from "./types/autonomy.js";
+export * from "./types/observation.js";
+export * from "./types/context.js";
+export * from "./types/plan.js";
+export * from "./types/evaluation.js";
+export * from "./types/loop.js";
+export * from "./execution/policy-gate.js";
+export * from "./orchestrator/loop.js";
