@@ -3,7 +3,7 @@ import type { LoopInput, LoopResult, LoopRunSnapshot } from "../types/loop.js";
 import type { Observation } from "../types/observation.js";
 import type { PlanGraph, PlanStep } from "../types/plan.js";
 import type { EvaluationRecord } from "../types/evaluation.js";
-import type { AutonomyConfig } from "../types/autonomy.js";
+// removed unused AutonomyConfig import
 import { createArtifactWriter } from "./artifact-writer.js";
 import { decidePolicy } from "../execution/policy-gate.js";
 import { createCoreMemoriesAdapterStub, buildContextBundle } from "../integration/corememories-adapter.js";
@@ -146,10 +146,18 @@ export async function runNeuronWavesLoop(input: LoopInput): Promise<LoopResult> 
 function inferIntents(text: string): string[] {
   const t = text.toLowerCase();
   const intents: string[] = [];
-  if (t.includes("search") || t.includes("look up")) intents.push("information_retrieval");
-  if (t.includes("email") || t.includes("message")) intents.push("communications");
-  if (t.includes("plan") || t.includes("steps")) intents.push("planning");
-  if (intents.length === 0) intents.push("general");
+  if (t.includes("search") || t.includes("look up")) {
+    intents.push("information_retrieval");
+  }
+  if (t.includes("email") || t.includes("message")) {
+    intents.push("communications");
+  }
+  if (t.includes("plan") || t.includes("steps")) {
+    intents.push("planning");
+  }
+  if (intents.length === 0) {
+    intents.push("general");
+  }
   return intents;
 }
 
@@ -251,3 +259,8 @@ function buildReply(plan: PlanGraph, evaluation: EvaluationRecord): string {
   }
   return lines.join(" ");
 }
+
+
+
+
+
