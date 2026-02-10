@@ -93,7 +93,6 @@ const MemorySchema = z
 
 const CoreMemoriesSchema = z
   .object({
-    enabled: z.boolean().optional(),
     compression: z.union([z.literal("auto"), z.literal("rule"), z.literal("ollama")]).optional(),
   })
   .strict()

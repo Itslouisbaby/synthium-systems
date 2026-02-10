@@ -189,6 +189,9 @@ export async function dispatchReplyFromConfig(params: {
     return { queuedFinal: false, counts: dispatcher.getQueuedCounts() };
   }
 
+  // CoreMemories is always-on in Synthium Systems.
+  // (No enable/disable flag; keep behavior consistent across installations.)
+
   // CoreMemories ingestion (best-effort): record inbound message text.
   {
     const inboundText =

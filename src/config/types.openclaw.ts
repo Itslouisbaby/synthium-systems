@@ -26,8 +26,6 @@ import type { SkillsConfig } from "./types.skills.js";
 import type { ToolsConfig } from "./types.tools.js";
 
 export type CoreMemoriesConfig = {
-  /** Enable CoreMemories ingestion/retrieval (best-effort). Default: false. */
-  enabled?: boolean;
   /** Compression mode used by CoreMemories. */
   compression?: "auto" | "rule" | "ollama";
 };
