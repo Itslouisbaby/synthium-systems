@@ -45,6 +45,12 @@ import { routeReply } from "./route-reply.js";
 import { ensureSkillSnapshot, prependSystemEvents } from "./session-updates.js";
 import { resolveTypingMode } from "./typing-mode.js";
 import { appendUntrustedContext } from "./untrusted-context.js";
+import {
+  injectFlashContext,
+  isFlashAmbientEnabled,
+  getFlashAmbientTokenMax,
+  type FlashContextMetrics,
+} from "./flash-context.js";
 
 type AgentDefaults = NonNullable<OpenClawConfig["agents"]>["defaults"];
 type ExecOverrides = Pick<ExecToolDefaults, "host" | "security" | "ask" | "node">;
