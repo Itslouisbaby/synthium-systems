@@ -58,9 +58,9 @@ const DEFAULT_CONFIG = {
     },
     limits: {
         // Flash is described as "0–48h"; this cap prevents runaway growth while still being useful.
-        maxFlashEntries: 250,
+        maxFlashEntries: 2500,
         // Warm layer is stored per-week file.
-        maxWarmEntriesPerWeek: 200,
+        maxWarmEntriesPerWeek: 1000,
     },
 };
 let CONFIG = null;
