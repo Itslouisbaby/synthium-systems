@@ -42,6 +42,12 @@ const DEFAULT_CONFIG = {
             enabled: false,
         },
     },
+    embeddings: {
+        provider: null, // "ollama" or "keywords"
+        model: null, // Model name for Ollama, e.g., "nomic-embed-text"
+        available: true, // Always available (keyword fallback)
+        autoConfigured: false, // Set to true after auto-pull
+    },
     fallback: {
         mode: "rules",
         enabled: true,
@@ -351,6 +357,248 @@ export async function checkOllamaAvailable(endpoint) {
         });
     });
 }
+
+// Check if a specific model is available in Ollama
+export async function checkModelAvailable(modelName, endpoint) {
+    const check = await checkOllamaAvailable(endpoint);
+    if (!check.available) {
+        return false;
+    }
+    return check.models.some((m) => m.name === modelName || m.name.startsWith(`${modelName}:`));
+}
+
+// Auto-pull nomic-embed-text model with non-blocking timeout
+export async function autoPullEmbeddingModel(endpoint, options = {}) {
+    const { modelName = "nomic-embed-text", timeoutMs = 30000, silent = false } = options;
+
+    // First check if Ollama is available
+    const ollamaCheck = await checkOllamaAvailable(endpoint);
+    if (!ollamaCheck.available) {
+        if (!silent) {
+            console.log(`CoreMemories: Ollama not available, skipping embedding model setup`);
+        }
+        return { success: false, reason: "ollama_unavailable" };
+    }
+
+    // Check if model already exists
+    const hasModel = await checkModelAvailable(modelName, endpoint);
+    if (hasModel) {
+        if (!silent) {
+            console.log(`CoreMemories: Embedding model "${modelName}" already available`);
+        }
+        return { success: true, reason: "already_exists" };
+    }
+
+    // Attempt to pull the model with timeout
+    try {
+        const base = endpoint ?? CONFIG?.engines?.local?.endpoint ?? "http://localhost:11434";
+        const url = new URL(base);
+        const isHttps = url.protocol === "https:";
+        const request = isHttps ? https.request : http.request;
+        const defaultPort = isHttps ? 443 : 80;
+
+        const postData = JSON.stringify({
+            name: modelName,
+            stream: false,
+        });
+
+        const pullPromise = new Promise((resolve, reject) => {
+            const req = request({
+                hostname: url.hostname,
+                port: url.port ? Number(url.port) : defaultPort,
+                path: "/api/pull",
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Content-Length": Buffer.byteLength(postData),
+                },
+            }, (res) => {
+                let data = "";
+                if (res.statusCode !== 200) {
+                    res.resume();
+                    reject(new Error(`Ollama pull returned status ${res.statusCode}`));
+                    return;
+                }
+                res.on("data", (chunk) => {
+                    data += chunk.toString();
+                });
+                res.on("end", () => {
+                    resolve(data);
+                });
+            });
+            req.on("error", reject);
+            req.setTimeout(timeoutMs, () => {
+                req.destroy();
+                reject(new Error("Pull timeout"));
+            });
+            req.write(postData);
+            req.end();
+        });
+
+        if (!silent) {
+            console.log(`CoreMemories: Pulling embedding model "${modelName}"... (this may take a moment)`);
+        }
+
+        await Promise.race([
+            pullPromise,
+            new Promise((_, reject) =>
+                setTimeout(() => reject(new Error("Pull timeout")), timeoutMs)),
+        ]);
+
+        // Verify model was pulled successfully
+        const hasModelAfter = await checkModelAvailable(modelName, endpoint);
+        if (hasModelAfter) {
+            if (!silent) {
+                console.log(`CoreMemories: Successfully pulled embedding model "${modelName}"`);
+            }
+            return { success: true, reason: "pulled" };
+        }
+        else {
+            if (!silent) {
+                console.warn(`CoreMemories: Pull completed but model not yet available`);
+            }
+            return { success: false, reason: "pull_incomplete" };
+        }
+    }
+    catch (err) {
+        if (!silent) {
+            console.warn(`CoreMemories: Failed to pull embedding model: ${err.message}`);
+        }
+        return { success: false, reason: "pull_failed", error: err.message };
+    }
+}
+
+// Generate embeddings with Ollama, fallback to keyword-based
+export async function generateEmbeddings(text, options = {}) {
+    const {
+        modelName = "nomic-embed-text",
+        endpoint = options.endpoint ?? CONFIG?.engines?.local?.endpoint ?? "http://localhost:11434",
+        fallbackToKeywords = true,
+        silent = false,
+    } = options;
+
+    // Try Ollama embeddings first
+    try {
+        const hasModel = await checkModelAvailable(modelName, endpoint);
+        if (!hasModel) {
+            if (!silent) {
+                console.log(`CoreMemories: Embedding model not available, using keyword fallback`);
+            }
+            if (fallbackToKeywords) {
+                return generateKeywordEmbedding(text);
+            }
+            return null;
+        }
+
+        const url = new URL(endpoint);
+        const isHttps = url.protocol === "https:";
+        const request = isHttps ? https.request : http.request;
+        const defaultPort = isHttps ? 443 : 80;
+
+        const postData = JSON.stringify({
+            model: modelName,
+            input: text,
+        });
+
+        const response = await new Promise((resolve, reject) => {
+            const req = request({
+                hostname: url.hostname,
+                port: url.port ? Number(url.port) : defaultPort,
+                path: "/api/embed",
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Content-Length": Buffer.byteLength(postData),
+                },
+            }, (res) => {
+                let data = "";
+                if (res.statusCode !== 200) {
+                    res.resume();
+                    reject(new Error(`Ollama embed returned status ${res.statusCode}`));
+                    return;
+                }
+                res.on("data", (chunk) => {
+                    data += chunk.toString();
+                });
+                res.on("end", () => {
+                    try {
+                        const parsed = JSON.parse(data);
+                        resolve(parsed);
+                    }
+                    catch (err) {
+                        reject(new Error("Invalid JSON from Ollama embed"));
+                    }
+                });
+            });
+            req.on("error", reject);
+            req.setTimeout(5000, () => {
+                req.destroy();
+                reject(new Error("Embed timeout"));
+            });
+            req.write(postData);
+            req.end();
+        });
+
+        // Handle both single embedding and batch responses
+        if (response.embeddings && Array.isArray(response.embeddings)) {
+            return response.embeddings[0];
+        }
+        if (response.embedding && Array.isArray(response.embedding)) {
+            return response.embedding;
+        }
+
+        // Invalid response, fall back
+        if (!silent) {
+            console.warn(`CoreMemories: Invalid embedding response format`);
+        }
+        if (fallbackToKeywords) {
+            return generateKeywordEmbedding(text);
+        }
+        return null;
+    }
+    catch (err) {
+        if (!silent) {
+            console.warn(`CoreMemories: Embedding generation failed: ${err.message}`);
+        }
+        if (fallbackToKeywords) {
+            return generateKeywordEmbedding(text);
+        }
+        return null;
+    }
+}
+
+// Keyword-based fallback embedding (simple bag-of-words with TF-IDF-like weighting)
+function generateKeywordEmbedding(text) {
+    const keywords = extractKeywords(text);
+    const words = text
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, " ")
+        .split(/\s+/)
+        .filter((w) => w.length > 2);
+
+    // Create a sparse word frequency representation
+    const freq = {};
+    for (const word of words) {
+        freq[word] = (freq[word] || 0) + 1;
+    }
+
+    // Find max frequency for normalization
+    const maxFreq = Math.max(...Object.values(freq), 1);
+
+    // Create normalized frequency vector (keyword words get boost)
+    const embedding = {};
+    for (const word of Object.keys(freq)) {
+        const boost = keywords.includes(word) ? 2.0 : 1.0;
+        embedding[word] = (freq[word] / maxFreq) * boost;
+    }
+
+    return {
+        type: "keyword",
+        keywords,
+        embedding,
+        vector: null, // No dense vector for keyword-based
+    };
+}
 function isPlainObject(value) {
     return Boolean(value && typeof value === "object" && !Array.isArray(value));
 }
@@ -419,9 +667,40 @@ export async function initializeConfig(options) {
         if (!hasPreferred && ollamaCheck.models.length > 0) {
             CONFIG.engines.local.model = ollamaCheck.models[0].name;
         }
+
+        // Auto-configure embeddings for zero-setup UX
+        // Non-blocking: if Ollama is available, try to ensure embedding model exists
+        const embeddingResult = await autoPullEmbeddingModel(CONFIG.engines.local.endpoint, {
+            modelName: "nomic-embed-text",
+            timeoutMs: 30000,
+            silent: true, // Don't spam logs during initialization
+        });
+        if (embeddingResult.success) {
+            CONFIG.embeddings = {
+                provider: "ollama",
+                model: "nomic-embed-text",
+                available: true,
+                autoConfigured: true,
+            };
+        }
+        else {
+            // Embeddings will fall back to keyword-based
+            CONFIG.embeddings = {
+                provider: "keywords",
+                model: null,
+                available: true,
+                fallbackReason: embeddingResult.reason,
+            };
+        }
     }
     else {
-        // No local LLM detected.
+        // No local LLM detected. Use keyword-based embedding fallback.
+        CONFIG.embeddings = {
+            provider: "keywords",
+            model: null,
+            available: true,
+            fallbackReason: "ollama_unavailable",
+        };
     }
     if (!CONFIG.engines.local.available) {
         // Only show tip if not shown recently (max once per 7 days)
