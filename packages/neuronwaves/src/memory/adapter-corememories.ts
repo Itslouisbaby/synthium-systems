@@ -55,9 +55,11 @@ function mapToNeuronWavesEntry(cmEntry: any): MemoryEntry {
 export async function createCoreMemoriesAdapter(
   config: AdapterConfig
 ): Promise<CoreMemoriesAdapter> {
-  const { getCoreMemories } = await import("@openclaw/core-memories");
+  // NOTE: This adapter bridges to @openclaw/core-memories
+// For full independence, replace with Synthium native memory implementation
+const { getCoreMemories } = await import("@openclaw/core-memories");
 
-  const memoryDir = `${config.workspaceDir}/.openclaw/memory/sessions/${config.sessionKey}`;
+  const memoryDir = config.memoryDir || `${config.workspaceDir}/.openclaw/memory/sessions/${config.sessionKey}`;
   const cm = await getCoreMemories({ memoryDir });
 
   return {

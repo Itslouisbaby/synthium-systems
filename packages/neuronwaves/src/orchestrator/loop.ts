@@ -212,8 +212,8 @@ export const runNeuronWavesLoop = async (
       }
 
       stepState.status = result === "success" ? "success" : result === "blocked" ? "skipped" : "failed";
-      if (result === "failed") {
-        onFailure: step.onFailure;
+      if (result === "failed" && step.onFailure !== "skip") {
+        log(state.logs, "warn", `Step ${step.id} failed with onFailure: ${step.onFailure}`, { stepId: step.id, onFailure: step.onFailure });
       }
       stepState.completedAt = new Date().toISOString();
     }

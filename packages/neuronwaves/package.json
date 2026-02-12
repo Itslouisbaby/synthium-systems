@@ -23,8 +23,11 @@
   "dependencies": {
     "nanoid": "^5.0.7"
   },
+  "peerDependencies": {
+    "@openclaw/core-memories": "^2026.2.9"
+  },
   "devDependencies": {
-    "tsup": "^8.2.4",
+    "tsdown": "^0.40.0",
     "typescript": "^5.6.3",
     "vitest": "^2.1.4"
   }
